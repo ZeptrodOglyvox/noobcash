@@ -18,7 +18,6 @@ class Wallet:
 		random_gen = Crypto.Random.new().read
 		self.private_key = RSA.generate(1024, random_gen)
 		self.public_key = self.private_key.publickey()
-		self.address = None  # TODO: what should the address be?
 		self.utxos = []
 
 	def balance(self):

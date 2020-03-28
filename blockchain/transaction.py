@@ -37,9 +37,6 @@ class Transaction:
         self.transaction_inputs = []
         self.transaction_outputs = []
 
-    def __getattr__(self, item):
-        return self.data[item]
-
     def to_dict(self):
         return dict(
             sender_address=self.sender_address,
@@ -53,3 +50,4 @@ class Transaction:
         h = SHA1.new(str(self.to_dict()).encode('utf8'))
         self.signature = binascii.hexlify(signer.sign(h)).decode('ascii')
         # return binascii.hexlify(signer.sign(h)).decode('ascii')
+
