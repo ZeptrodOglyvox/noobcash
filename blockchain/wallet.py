@@ -21,4 +21,4 @@ class Wallet:
 		self.utxos = []
 
 	def balance(self):
-		raise NotImplementedError
+		return sum([tx.amount for tx in self.utxos])
