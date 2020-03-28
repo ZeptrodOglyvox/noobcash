@@ -18,4 +18,3 @@ def generate_wallet():
     }
 
     return make_response(jsonify(response)), 200
-
