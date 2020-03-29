@@ -44,12 +44,10 @@ class Transaction:
             transaction_outputs=self.transaction_outputs,
         )
 
-    # Might not be useful here, but probably useful wherever we do the signing
-    def sign(self):
-        private_key = RSA.generate(5)
+    def sign(self, private_key):
+        private_key = RSA.import_key(private_key)
         signer = PKCS1_v1_5.new(private_key)
         h = SHA1.new(str(self.to_dict()).encode('utf8'))
-        # self.signature = binascii.hexlify(signer.sign(h)).decode('ascii')
         return binascii.hexlify(signer.sign(h)).decode('ascii')
 
     @classmethod

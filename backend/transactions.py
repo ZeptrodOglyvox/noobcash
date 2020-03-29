@@ -94,7 +94,7 @@ def sign_transaction():
         response = dict(message='Improper transaction json provided.')
         status_code = 400
         return make_response(jsonify(response)), status_code
-    signature = tx.sign()
+    signature = tx.sign(node.wallet.private_key)
 
     response = dict(signature=signature)
     return make_response(jsonify(response)), 200
