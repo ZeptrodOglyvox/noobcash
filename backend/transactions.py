@@ -1,8 +1,8 @@
 from uuid import uuid4
 
 from flask import Blueprint, make_response, jsonify, request
-import backend
-from backend import wallet, blockchain
+import backend as bck
+from backend import blockchain
 
 from blockchain.transaction import Transaction, TransactionInput, TransactionOutput
 from blockchain.utils import verify_signature, required_fields
@@ -18,8 +18,8 @@ bp = Blueprint('transactions', __name__, url_prefix='/transactions')
 
 @bp.route('/generate_wallet', methods=['GET'])
 def generate_wallet():
-    backend.wallet = Wallet()
-    private_key, public_key = backend.wallet.private_key, backend.wallet.public_key
+    bck.wallet = Wallet()
+    private_key, public_key = bck.wallet.private_key, bck.wallet.public_key
 
     response = {
         'private_key': binascii.hexlify(private_key.exportKey(format='DER')).decode('ascii'),
@@ -36,12 +36,13 @@ def create_transaction():
     response = {}
     status_code = None
 
-    if wallet.balance() < data['amount']:
+    if bck.wallet.balance() < data['amount']:
         response = dict(message='Your balance is not enough to complete transaction')
         status_code = 400
 
-    if response:
         return make_response(jsonify(response)), status_code
+
+    # TODO: What if recipient doesn't exist, amount is negative etc.?
 
     transaction_id = str(uuid4())
 
@@ -49,7 +50,7 @@ def create_transaction():
     sum_ = 0
     tx_inputs = []
     while sum_ < data['amount']:
-        utxo = wallet.utxos.pop()
+        utxo = bck.wallet.utxos.pop()
         sum_ += utxo.amount()
         tx_inputs.append(TransactionInput(previous_output_id=utxo.id, amount=utxo.amount))
 
@@ -77,7 +78,22 @@ def create_transaction():
         id=transaction_id
     )
 
-    response = dict(transaction=tx.to_dict(), signature=tx.sign())
+    response = tx.to_dict()
+    return make_response(jsonify(response)), 200
+
+
+@bp.route('/sign', methods=['POST'])
+def sign_transaction():
+    data = request.get_json()
+    try:
+        tx = Transaction.from_dict(data['transaction'])
+    except TypeError:
+        response = dict(message='Improper transaction json provided.')
+        status_code = 400
+        return make_response(jsonify(response)), status_code
+    signature = tx.sign()
+
+    response = dict(signature=signature)
     return make_response(jsonify(response)), 200
 
 
@@ -88,8 +104,8 @@ def submit_transaction():
 
     try:
         tx = Transaction.from_dict(data['transaction'])
-    except ValueError:
-        response = dict(message='Improper transaction json provided')
+    except TypeError:
+        response = dict(message='Improper transaction json provided.')
         status_code = 400
         return make_response(jsonify(response)), status_code
 

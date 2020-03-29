@@ -36,9 +36,12 @@ class Transaction:
 
     def to_dict(self):
         return OrderedDict(
+            transaction_id=self.id,
             sender_address=self.sender_address,
             recipient_address=self.recipient_address,
-            amount=self.amount
+            amount=self.amount,
+            transaction_inputs=self.transaction_inputs,
+            transaction_outputs=self.transaction_outputs,
         )
 
     # Might not be useful here, but probably useful wherever we do the signing
@@ -51,6 +54,4 @@ class Transaction:
 
     @classmethod
     def from_dict(cls, tx_dict):
-        raise NotImplementedError
-
-
+        return Transaction(**tx_dict)

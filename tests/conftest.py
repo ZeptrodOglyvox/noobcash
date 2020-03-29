@@ -1,6 +1,7 @@
 from backend import create_app
 import pytest
 from blockchain import Blockchain
+from blockchain.transaction import Transaction
 
 
 @pytest.fixture(scope='module')

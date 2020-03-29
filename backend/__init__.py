@@ -17,4 +17,3 @@ def create_app(testing=False):
 
     return app
 
-

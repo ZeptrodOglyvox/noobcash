@@ -21,8 +21,8 @@ def required_fields(fields):
         def wrapped_view(*args, **kwargs):
             data = request.get_json()
 
-            if not all(k in data for k in fields):
-                response = dict(message='Required Fields Missing')
+            if data is None or not all(k in data for k in fields):
+                response = dict(message='Required fields missing.')
                 status_code = 400
                 return make_response(jsonify(response)), status_code
             else:
