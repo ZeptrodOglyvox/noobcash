@@ -1,5 +1,5 @@
 from flask import Flask
-from blockchain import Blockchain
+from backend.blockchain import Blockchain
 
 blockchain = Blockchain()
 wallet = None  # Initialized by GET to /generate_wallet endpoint
@@ -14,7 +14,7 @@ def create_app(testing=False):
         TESTING=testing
     )
 
-    from . import transactions
+    from backend.blueprints import transactions
     app.register_blueprint(transactions.bp)
 
     return app

@@ -7,9 +7,9 @@ from flask import Blueprint, make_response, jsonify, request
 import backend as node
 from backend.utils import required_fields, validate_transaction_document
 
-from blockchain.transaction import Transaction, TransactionInput, TransactionOutput
-from blockchain.utils import verify_signature
-from blockchain.wallet import Wallet
+from backend.blockchain.transaction import Transaction, TransactionInput, TransactionOutput
+from backend.blockchain.utils import verify_signature
+from backend.blockchain.wallet import Wallet
 
 import binascii
 
@@ -19,6 +19,9 @@ bp = Blueprint('transactions', __name__, url_prefix='/transactions')
 
 @bp.route('/generate_wallet', methods=['GET'])
 def generate_wallet():
+    """
+    Generate a wallet, add it to the node and return the keys to the user.
+    """
     node.wallet = Wallet()
     private_key, public_key = node.wallet.private_key, node.wallet.public_key
 
@@ -31,8 +34,11 @@ def generate_wallet():
 
 
 @bp.route('/create', methods=['POST'])
-@required_fields('sender_address', 'sender_private_key', 'recipient_address', 'amount')
+@required_fields('sender_address', 'recipient_address', 'amount')
 def create_transaction():
+    """
+    Create a valid transaction document using any UTXOs available and return it.
+    """
     data = request.get_json()
     response = {}
     status_code = None
@@ -86,15 +92,19 @@ def create_transaction():
 
 @bp.route('/sign', methods=['POST'])
 def sign_transaction():
+    """
+    Sign provided transaction document using host private key.
+    """
     data = request.get_json()
+
     try:
         tx = Transaction.from_dict(data)
     except TypeError:
         response = dict(message='Improper transaction json provided.')
         status_code = 400
         return make_response(jsonify(response)), status_code
-    signature = tx.sign(node.wallet.private_key)
 
+    signature = tx.sign(node.wallet.private_key)
     response = dict(signature=signature)
     return make_response(jsonify(response)), 200
 
@@ -102,12 +112,16 @@ def sign_transaction():
 @bp.route('/submit', methods=['POST'])
 @required_fields('transaction', 'signature')
 def submit_transaction():
+    """
+    Parse a signed transaction document, check its validity, verify signature and add to local blockchain.
+    Broadcast to the same endpoint for peers if required.
+    """
     data = request.get_json()
 
     # Create candidate transaction object
     try:
         tx = Transaction.from_dict(data['transaction'])
-    except TypeError:
+    except (KeyError, TypeError):
         response = dict(message='Improper transaction json provided.')
         status_code = 400
         return make_response(jsonify(response)), status_code
@@ -126,9 +140,12 @@ def submit_transaction():
         status_code = 400
         return make_response(jsonify(response)), status_code
 
+    # Add transactions to local blockchain and outputs to local UTXO archive
     node.blockchain.add_transaction(tx)
+    for to in tx.transaction_outputs:
+        node.utxos[to.recipient_address].append(to)
 
-    # Broadcast if needed, turn off broadcasting for recipients
+    # Broadcast if needed and turn off broadcasting for other nodes
     if request.args.get('broadcast', type=int, default=0):
         for address in node.peers:
             requests.post(
