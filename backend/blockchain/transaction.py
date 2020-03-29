@@ -20,6 +20,10 @@ class TransactionInput:
     def from_dict(cls, d):
         return cls(**d)
 
+    @classmethod
+    def from_output(cls, transaction_output):
+        return cls(previous_output_id=transaction_output.id, amount=transaction_output.amount)
+
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 

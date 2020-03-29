@@ -1,5 +1,5 @@
 import backend as node
-from backend.blockchain import Wallet, TransactionOutput, TransactionInput, Transaction
+from backend.blockchain import Wallet, TransactionOutput, TransactionInput, Transaction, verify_signature
 
 
 def test_wallet():
@@ -18,18 +18,8 @@ def test_wallet_balance():
     assert node.wallet.balance() == 27
 
 
-def test_transaction_dictification():
-    ins = [
-        TransactionInput('0', 10),
-        TransactionInput('1', 10)
-    ]
-
-    outs = [
-        TransactionOutput('mytrans', '321', 15),
-        TransactionOutput('mytrans', '123', 5)
-    ]
-
-    tx = Transaction('123', '321', 15, ins, outs, 'mytrans')
+def test_transaction_dictification(test_transaction):
+    tx, ins, outs = test_transaction
 
     tx_dict = tx.to_dict()
     assert tx_dict['transaction_inputs'] == [t.to_dict() for t in ins]
@@ -40,3 +30,10 @@ def test_transaction_dictification():
     assert tx_ressurection == tx
     assert tx_ressurection.transaction_outputs == outs
     assert tx_ressurection.transaction_inputs == ins
+
+
+def test_verify_signature(test_transaction):
+    w = Wallet()
+    tx = Transaction(w.address, '0', 0)
+    signature = tx.sign(w.private_key_rsa)
+    assert verify_signature(tx, signature)

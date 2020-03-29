@@ -26,6 +26,8 @@ def generate_wallet():
         'public_key': node.wallet.public_key
     }
 
+    # TODO: Should wallet also be broadcast and corresponding utxos entry added?
+
     return make_response(jsonify(response)), 200
 
 
@@ -53,10 +55,12 @@ def create_transaction():
     sender_address = data['sender_address']
     sum_ = 0
     tx_inputs = []
-    while sum_ < data['amount']:
-        utxo = node.utxos[sender_address].pop()
-        sum_ += utxo.amount()
-        tx_inputs.append(TransactionInput(previous_output_id=utxo.id, amount=utxo.amount))
+    for utxo in node.utxos[sender_address]:
+        if sum_ >= data['amount']:
+            break
+        else:
+            sum_ += utxo.amount
+            tx_inputs.append(TransactionInput.from_output(utxo))
 
     # Create 2 transaction outputs, one for the transfer and one for the sender's change
     tx_outputs = [
@@ -138,6 +142,12 @@ def submit_transaction():
 
     # Add transactions to local blockchain and outputs to local UTXO archive
     node.blockchain.add_transaction(tx)
+
+    for ti in tx.transaction_inputs:
+        for idx, utxo in enumerate(node.utxos[tx.sender_address]):
+            if utxo.id == ti.previous_output_id:
+                del node.utxos[tx.sender_address][idx]
+
     for to in tx.transaction_outputs:
         node.utxos[to.recipient_address].append(to)
 
