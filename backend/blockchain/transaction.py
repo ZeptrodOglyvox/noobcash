@@ -20,6 +20,9 @@ class TransactionInput:
     def from_dict(cls, d):
         return cls(**d)
 
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
 
 class TransactionOutput:
     def __init__(self, transaction_id, recipient_address, amount, id=None):
@@ -34,6 +37,9 @@ class TransactionOutput:
     @classmethod
     def from_dict(cls, d):
         return cls(**d)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
 
 class Transaction:
@@ -56,7 +62,7 @@ class Transaction:
         Flattens inputs and outputs to dicts as well
         """
         return OrderedDict(
-            transaction_id=self.id,
+            id=self.id,
             sender_address=self.sender_address,
             recipient_address=self.recipient_address,
             amount=self.amount,
@@ -69,10 +75,13 @@ class Transaction:
         """
         Constructs inputs and outputs from dicts as well.
         """
-        for idx, ti in tx_dict['transaction_inputs'].enumerate():
+        for idx, ti in enumerate(tx_dict['transaction_inputs']):
             tx_dict['transaction_inputs'][idx] = TransactionInput.from_dict(ti)
 
-        for idx, to in tx_dict['transaction_outputs'].enumerate():
+        for idx, to in enumerate(tx_dict['transaction_outputs']):
             tx_dict['transaction_outputs'][idx] = TransactionOutput.from_dict(to)
 
         return cls(**tx_dict)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__

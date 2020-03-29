@@ -7,11 +7,8 @@ from flask import Blueprint, make_response, jsonify, request
 import backend as node
 from backend.utils import required_fields, validate_transaction_document
 
-from backend.blockchain.transaction import Transaction, TransactionInput, TransactionOutput
-from backend.blockchain.utils import verify_signature
-from backend.blockchain.wallet import Wallet
-
-import binascii
+from backend.blockchain import \
+    Transaction, TransactionInput, TransactionOutput, Wallet, verify_signature
 
 
 bp = Blueprint('transactions', __name__, url_prefix='/transactions')
@@ -23,11 +20,10 @@ def generate_wallet():
     Generate a wallet, add it to the node and return the keys to the user.
     """
     node.wallet = Wallet()
-    private_key, public_key = node.wallet.private_key, node.wallet.public_key
 
     response = {
-        'private_key': binascii.hexlify(private_key.exportKey(format='DER')).decode('ascii'),
-        'public_key': binascii.hexlify(public_key.exportKey(format='DER')).decode('ascii')
+        'private_key': node.wallet.private_key,
+        'public_key': node.wallet.public_key
     }
 
     return make_response(jsonify(response)), 200
@@ -104,7 +100,7 @@ def sign_transaction():
         status_code = 400
         return make_response(jsonify(response)), status_code
 
-    signature = tx.sign(node.wallet.private_key)
+    signature = tx.sign(node.wallet.private_key_rsa)
     response = dict(signature=signature)
     return make_response(jsonify(response)), 200
 
