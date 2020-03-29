@@ -1,9 +1,8 @@
 import binascii
 
-import pytest
 from Crypto.PublicKey import RSA
 
-from tests.utils import assert_json_200
+from tests.functional.utils import assert_json_200
 
 
 def test_generate_wallet(test_client):
@@ -17,6 +16,7 @@ def test_generate_wallet(test_client):
 
     from backend import wallet
     assert wallet is not None
+    assert wallet.private_key_rsa.publickey() == wallet.public_key_rsa
 
 
 def test_required_fields(test_client):
@@ -32,3 +32,6 @@ def test_required_fields(test_client):
     response = test_client.post('/transactions/create',  data={'sender_address': 5})
     assert_missing(response)
 
+
+def test_create_transaction(test_client):
+    pass
