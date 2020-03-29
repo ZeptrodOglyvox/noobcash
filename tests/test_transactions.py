@@ -31,3 +31,4 @@ def test_required_fields(test_client):
 
     response = test_client.post('/transactions/create',  data={'sender_address': 5})
     assert_missing(response)
+

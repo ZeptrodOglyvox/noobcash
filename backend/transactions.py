@@ -5,15 +5,13 @@ import requests
 from flask import Blueprint, make_response, jsonify, request
 
 import backend as node
-from backend.utils import required_fields
+from backend.utils import required_fields, validate_transaction_document
 
 from blockchain.transaction import Transaction, TransactionInput, TransactionOutput
 from blockchain.utils import verify_signature
 from blockchain.wallet import Wallet
 
 import binascii
-import Crypto
-from Crypto.PublicKey import RSA
 
 
 bp = Blueprint('transactions', __name__, url_prefix='/transactions')
@@ -33,7 +31,7 @@ def generate_wallet():
 
 
 @bp.route('/create', methods=['POST'])
-@required_fields(['sender_address', 'sender_private_key', 'recipient_address', 'amount'])
+@required_fields('sender_address', 'sender_private_key', 'recipient_address', 'amount')
 def create_transaction():
     data = request.get_json()
     response = {}
@@ -50,10 +48,11 @@ def create_transaction():
     transaction_id = str(uuid4())
 
     # Use as many utxos as necessary to create the new transaction inputs
+    sender_address = data['sender_address']
     sum_ = 0
     tx_inputs = []
     while sum_ < data['amount']:
-        utxo = node.wallet.utxos.pop()
+        utxo = node.utxos[sender_address].pop()
         sum_ += utxo.amount()
         tx_inputs.append(TransactionInput(previous_output_id=utxo.id, amount=utxo.amount))
 
@@ -89,7 +88,7 @@ def create_transaction():
 def sign_transaction():
     data = request.get_json()
     try:
-        tx = Transaction.from_dict(data['transaction'])
+        tx = Transaction.from_dict(data)
     except TypeError:
         response = dict(message='Improper transaction json provided.')
         status_code = 400
@@ -101,10 +100,11 @@ def sign_transaction():
 
 
 @bp.route('/submit', methods=['POST'])
-@required_fields(['transaction', 'signature'])
-def submit_transaction(broadcast):
+@required_fields('transaction', 'signature')
+def submit_transaction():
     data = request.get_json()
 
+    # Create candidate transaction object
     try:
         tx = Transaction.from_dict(data['transaction'])
     except TypeError:
@@ -112,14 +112,23 @@ def submit_transaction(broadcast):
         status_code = 400
         return make_response(jsonify(response)), status_code
 
-    ver_result = verify_signature(tx, data['signature'])
-    if isinstance(ver_result, str):
-        response = dict(message=ver_result)
+    # Validate transaction as-is
+    val_result = validate_transaction_document(tx)
+    if isinstance(val_result, str):
+        response = dict(message=val_result)
         status_code = 400
         return make_response(jsonify(response)), status_code
-    else:
-        node.blockchain.add_transaction(tx)
 
+    # Verify signature
+    sign_result = verify_signature(tx, data['signature'])
+    if isinstance(sign_result, str):
+        response = dict(message=sign_result)
+        status_code = 400
+        return make_response(jsonify(response)), status_code
+
+    node.blockchain.add_transaction(tx)
+
+    # Broadcast if needed, turn off broadcasting for recipients
     if request.args.get('broadcast', type=int, default=0):
         for address in node.peers:
             requests.post(

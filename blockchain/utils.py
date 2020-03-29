@@ -13,3 +13,4 @@ def verify_signature(transaction, signature):
         return True
     except (ValueError, TypeError):
         return 'Invalid Signature.'
+

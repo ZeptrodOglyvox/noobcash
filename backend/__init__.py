@@ -2,8 +2,9 @@ from flask import Flask
 from blockchain import Blockchain
 
 blockchain = Blockchain()
-wallet = None
-peers = set()
+wallet = None  # Initialized by GET to /generate_wallet endpoint
+peers = set()  # Updated with addresses of peers in the form 'url:port'
+utxos = {}  # {'somepubkey': [utxo1]}
 
 
 def create_app(testing=False):
