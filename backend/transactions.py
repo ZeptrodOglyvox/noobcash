@@ -1,8 +1,10 @@
+import json
 from uuid import uuid4
+
+import requests
 from flask import Blueprint, make_response, jsonify, request
 
-import backend as bck
-from backend import blockchain
+import backend as node
 from backend.utils import required_fields
 
 from blockchain.transaction import Transaction, TransactionInput, TransactionOutput
@@ -19,8 +21,8 @@ bp = Blueprint('transactions', __name__, url_prefix='/transactions')
 
 @bp.route('/generate_wallet', methods=['GET'])
 def generate_wallet():
-    bck.wallet = Wallet()
-    private_key, public_key = bck.wallet.private_key, bck.wallet.public_key
+    node.wallet = Wallet()
+    private_key, public_key = node.wallet.private_key, node.wallet.public_key
 
     response = {
         'private_key': binascii.hexlify(private_key.exportKey(format='DER')).decode('ascii'),
@@ -37,7 +39,7 @@ def create_transaction():
     response = {}
     status_code = None
 
-    if bck.wallet.balance() < data['amount']:
+    if node.wallet.balance() < data['amount']:
         response = dict(message='Your balance is not enough to complete transaction')
         status_code = 400
 
@@ -51,7 +53,7 @@ def create_transaction():
     sum_ = 0
     tx_inputs = []
     while sum_ < data['amount']:
-        utxo = bck.wallet.utxos.pop()
+        utxo = node.wallet.utxos.pop()
         sum_ += utxo.amount()
         tx_inputs.append(TransactionInput(previous_output_id=utxo.id, amount=utxo.amount))
 
@@ -100,7 +102,7 @@ def sign_transaction():
 
 @bp.route('/submit', methods=['POST'])
 @required_fields(['transaction', 'signature'])
-def submit_transaction():
+def submit_transaction(broadcast):
     data = request.get_json()
 
     try:
@@ -116,8 +118,15 @@ def submit_transaction():
         status_code = 400
         return make_response(jsonify(response)), status_code
     else:
-        blockchain.add_transaction(tx)
+        node.blockchain.add_transaction(tx)
 
-    # TODO: broadcast transaction
+    if request.args.get('broadcast', type=int, default=0):
+        for address in node.peers:
+            requests.post(
+                address + '/submit?broadcast=0',
+                data=json.dumps(data['transaction']),
+                content_type='application/json'
+            )
+
     response = dict(message='Transaction added.')
     return make_response(jsonify(response)), 200

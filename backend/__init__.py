@@ -3,6 +3,7 @@ from blockchain import Blockchain
 
 blockchain = Blockchain()
 wallet = None
+peers = set()
 
 
 def create_app(testing=False):
@@ -16,4 +17,3 @@ def create_app(testing=False):
     app.register_blueprint(transactions.bp)
 
     return app
-

@@ -54,4 +54,4 @@ class Transaction:
 
     @classmethod
     def from_dict(cls, tx_dict):
-        return Transaction(**tx_dict)
+        return cls(**tx_dict)
