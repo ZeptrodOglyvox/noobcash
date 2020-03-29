@@ -1,11 +1,12 @@
 from uuid import uuid4
-
 from flask import Blueprint, make_response, jsonify, request
+
 import backend as bck
 from backend import blockchain
+from backend.utils import required_fields
 
 from blockchain.transaction import Transaction, TransactionInput, TransactionOutput
-from blockchain.utils import verify_signature, required_fields
+from blockchain.utils import verify_signature
 from blockchain.wallet import Wallet
 
 import binascii
