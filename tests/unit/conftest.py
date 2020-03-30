@@ -4,7 +4,7 @@ from backend.blockchain import TransactionInput, TransactionOutput, Transaction
 
 
 @pytest.fixture(scope='module')
-def test_transaction():
+def test_trans_ins_outs():
     ins = [
         TransactionInput('0', 10),
         TransactionInput('1', 10)

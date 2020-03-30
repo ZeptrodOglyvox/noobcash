@@ -1,3 +1,7 @@
+"""
+Module containing cryptocurrency & blockchain biz logic
+"""
+
 from .blockchain import Block, Blockchain
 from .wallet import Wallet
 from .transaction import TransactionInput, Transaction, TransactionOutput
