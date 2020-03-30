@@ -27,14 +27,11 @@ def test_generate_wallet(test_client):
 
 
 def test_required_fields(test_client):
-    def assert_missing(response):
-        assert response.content_type == 'application/json'
-        data = response.get_json()
-        assert response.status_code == 400
-        assert data['message'] == 'Required fields missing.'
-
     response = test_client.post('/transactions/create')
-    assert_missing(response)
+    assert response.content_type == 'application/json'
+    data = response.get_json()
+    assert response.status_code == 400
+    assert data['message'] == 'Please submit data as JSON using a POST request.'
 
     response = test_client.post(
         '/transactions/create',
@@ -43,7 +40,10 @@ def test_required_fields(test_client):
         )),
         content_type='application/json'
     )
-    assert_missing(response)
+    assert response.content_type == 'application/json'
+    data = response.get_json()
+    assert response.status_code == 400
+    assert data['message'] == 'Required fields missing.'
 
 
 def test_create_transaction(test_client, node_setup):
@@ -110,4 +110,4 @@ def test_submit_transaction_local(test_client, node_setup, test_transaction):
     data = response.get_json()
     assert data['message'] == 'Transaction added.'
     assert test_transaction in node.blockchain.unconfirmed_transactions
-    assert utxos_len_before - 2 == utxos_len_after
+    assert utxos_len_before - 1 == utxos_len_after

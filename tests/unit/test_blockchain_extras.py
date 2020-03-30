@@ -18,8 +18,8 @@ def test_wallet_balance():
     assert node.wallet.balance() == 27
 
 
-def test_transaction_dictification(test_transaction):
-    tx, ins, outs = test_transaction
+def test_transaction_dictification(test_trans_ins_outs):
+    tx, ins, outs = test_trans_ins_outs
 
     tx_dict = tx.to_dict()
     assert tx_dict['transaction_inputs'] == [t.to_dict() for t in ins]
@@ -32,7 +32,7 @@ def test_transaction_dictification(test_transaction):
     assert tx_ressurection.transaction_inputs == ins
 
 
-def test_verify_signature(test_transaction):
+def test_verify_signature():
     w = Wallet()
     tx = Transaction(w.address, '0', 0)
     signature = tx.sign(w.private_key_rsa)

@@ -10,7 +10,6 @@ from backend.utils import required_fields, validate_transaction_document
 from backend.blockchain import \
     Transaction, TransactionInput, TransactionOutput, Wallet, verify_signature
 
-
 bp = Blueprint('transactions', __name__, url_prefix='/transactions')
 
 
@@ -140,7 +139,7 @@ def submit_transaction():
         status_code = 400
         return make_response(jsonify(response)), status_code
 
-    # Add transactions to local blockchain and outputs to local UTXO archive
+    # Add transactions to local blockchain, remove spent outputs and add new outputs to local UTXO archive
     node.blockchain.add_transaction(tx)
 
     for ti in tx.transaction_inputs:
@@ -159,6 +158,8 @@ def submit_transaction():
                 data=json.dumps(data['transaction']),
                 content_type='application/json'
             )
+
+    # TODO: What if other nodes say tx is invalid?
 
     response = dict(message='Transaction added.')
     return make_response(jsonify(response)), 200

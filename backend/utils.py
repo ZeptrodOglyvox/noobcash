@@ -7,6 +7,12 @@ def required_fields(*fields):
     def wrapper(view):
         @functools.wraps(view)
         def wrapped_view(*args, **kwargs):
+            if not request.content_type == 'application/json' or \
+                    not request.method == 'POST':
+                response = dict(message='Please submit data as JSON using a POST request.')
+                status_code = 400
+                return make_response(jsonify(response)), status_code
+
             data = request.get_json()
 
             if data is None or not all(k in data for k in fields):

@@ -12,7 +12,7 @@ class Block:
     def __init__(self, index, previous_hash, timestamp=None, transactions=None, nonce=None, hash=None):
         self.index = index
         self.timestamp = timestamp or time.time()
-        self.transactions = transactions or []
+        self.transactions = set(transactions) or set()
         self.nonce = nonce
         self.previous_hash = previous_hash
         self.hash = hash
@@ -44,6 +44,7 @@ class Blockchain:
         self.pow_difficulty = pow_difficulty
         if create_genesis:
             self.create_genesis_block()
+            self.last_block.hash = self.last_block.compute_hash()
 
     def create_genesis_block(self):
         genesis_block = Block(index=0, previous_hash='0')
@@ -80,7 +81,7 @@ class Blockchain:
             return True
 
     def add_transaction(self, transaction):
-        self.unconfirmed_transactions.append(transaction)
+        self.unconfirmed_transactions.add(transaction)
 
     def mine(self):
         if not self.unconfirmed_transactions:
@@ -98,13 +99,13 @@ class Blockchain:
         self.unconfirmed_transactions = self.unconfirmed_transactions[Block.capacity:]
         return new_block.index
 
-    def json_dump(self):
-        return json.dumps([block.to_dict() for block in self.chain])
+    def to_dict_list(self):
+        return [b.to_dict() for b in self.chain]
 
     @classmethod
-    def from_dump(cls, dump):
+    def from_dict_list(cls, dict_list):
         ret = cls(create_genesis=False)
-        chain = [Block.from_dict(b_dict) for b_dict in json.loads(dump)]
+        chain = [Block.from_dict(b_dict) for b_dict in dict_list]
         for block in chain:
             # TODO: Should genesis block be added like this?
             if block.previous_hash == '0':
@@ -113,3 +114,12 @@ class Blockchain:
                 return 'The chain dump is invalid or has been tampered with.'
 
         return ret
+
+    def __contains__(self, item):
+        return item in self.chain
+
+    def __eq__(self, other):
+        return self.chain == other.chain
+
+    def __len__(self):
+        return len(self.chain)
