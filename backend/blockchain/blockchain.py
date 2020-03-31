@@ -3,7 +3,7 @@ from copy import deepcopy
 from hashlib import sha256
 import json
 
-from .transaction import Transaction
+from .transaction import Transaction, TransactionOutput
 
 
 class Block:
@@ -12,7 +12,7 @@ class Block:
     def __init__(self, index, previous_hash, timestamp=None, transactions=None, nonce=None, hash=None):
         self.index = index
         self.timestamp = timestamp or time.time()
-        self.transactions = set(transactions) or set()
+        self.transactions = transactions or []
         self.nonce = nonce
         self.previous_hash = previous_hash
         self.hash = hash
@@ -40,8 +40,9 @@ class Block:
 class Blockchain:
     def __init__(self, create_genesis=True, pow_difficulty=3):
         self.chain = []
-        self.unconfirmed_transactions = []
+        self.unconfirmed_transactions = []  # TODO: Should this be a set?
         self.pow_difficulty = pow_difficulty
+        self.utxos = {}
         if create_genesis:
             self.create_genesis_block()
             self.last_block.hash = self.last_block.compute_hash()
@@ -81,7 +82,11 @@ class Blockchain:
             return True
 
     def add_transaction(self, transaction):
-        self.unconfirmed_transactions.add(transaction)
+        self.unconfirmed_transactions.append(transaction)
+
+    def transaction_unconfirmed(self, transaction):
+        unconfirmed_ids = [tx.transaction_id for tx in self.unconfirmed_transactions]
+        return transaction.id in unconfirmed_ids
 
     def mine(self):
         if not self.unconfirmed_transactions:
@@ -99,24 +104,38 @@ class Blockchain:
         self.unconfirmed_transactions = self.unconfirmed_transactions[Block.capacity:]
         return new_block.index
 
-    def to_dict_list(self):
-        return [b.to_dict() for b in self.chain]
+    def to_dict(self):
+        ret = dict(
+            length=len(self),
+            chain=[b.to_dict() for b in self.chain],
+            unconfirmed_transactions=[t.to_dict() for t in self.unconfirmed_transactions],
+            utxos=[t.to_dict() for t in self.utxos]
+        )
+        return ret
 
     @classmethod
-    def from_dict_list(cls, dict_list):
+    def from_dict(cls, dict_):
+        """
+        Secure way of creating a BC from a loaded JSON dump.
+        :param dict_list: An iterable of python dictionaries or dict-like objects.
+        :return: Either a Blockchain or a str error message.
+        """
         ret = cls(create_genesis=False)
-        chain = [Block.from_dict(b_dict) for b_dict in dict_list]
-        for block in chain:
-            # TODO: Should genesis block be added like this?
-            if block.previous_hash == '0':
-                ret.chain.append(block)
-            elif not ret.add_block(block, block.hash):
-                return 'The chain dump is invalid or has been tampered with.'
+        for block_dict in dict_['chain']:
+            block = Block.from_dict(block_dict)
+            if not block.index == 0:
+                block_added = ret.add_block(block, block.hash)
+                if not block_added:
+                    return 'The chain dump is invalid or has been tampered with.'
+            else:
+                ret.chain.append(block)  # Add genesis block.
 
+        ret.unconfirmed_transactions = [Transaction.from_dict(d) for d in dict_['unconfirmed_transactions']]
+        ret.utxos = [TransactionOutput.from_dict(d) for d in dict_['utxos']]
         return ret
 
     def __contains__(self, item):
-        return item in self.chain
+        return self.chain[item.index] == item
 
     def __eq__(self, other):
         return self.chain == other.chain

@@ -8,7 +8,6 @@ A module representing the node instance backend. API endpoint implementations in
 blockchain = Blockchain()
 wallet = None  # Initialized by GET to /generate_wallet endpoint
 peers = set()  # Updated with addresses of peers in the form 'url:port'
-utxos = {}  # {'somepubkey': [utxo1, ...]}
 
 
 def create_app(testing=False):

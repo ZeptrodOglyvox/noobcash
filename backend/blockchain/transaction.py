@@ -48,8 +48,8 @@ class TransactionOutput:
 
 class Transaction:
     def __init__(self, sender_address, recipient_address, amount,
-                 transaction_inputs=None, transaction_outputs=None, id=None):
-        self.id = id or str(uuid4())
+                 transaction_inputs=None, transaction_outputs=None, transaction_id=None):
+        self.transaction_id = transaction_id or str(uuid4())
         self.sender_address = sender_address
         self.recipient_address = recipient_address
         self.amount = amount
@@ -66,7 +66,7 @@ class Transaction:
         Flattens inputs and outputs to dicts as well
         """
         return OrderedDict(
-            id=self.id,
+            transaction_id=self.transaction_id,
             sender_address=self.sender_address,
             recipient_address=self.recipient_address,
             amount=self.amount,

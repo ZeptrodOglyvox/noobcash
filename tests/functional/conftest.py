@@ -27,14 +27,14 @@ def node_setup():
     node.wallet = Wallet()
 
     node.blockchain = Blockchain()
-    node.utxos = {}
+    node.blockchain.utxos = {}
 
     address = node.wallet.address
-    node.utxos[address] = [
+    node.blockchain.utxos[address] = [
         TransactionOutput('0', address, 10),
         TransactionOutput('1', address, 10)
     ]
-    node.utxos['0'] = []
+    node.blockchain.utxos['0'] = []
 
 
 @pytest.fixture()

@@ -54,10 +54,10 @@ def create_transaction():
     sender_address = data['sender_address']
     sum_ = 0
     tx_inputs = []
-    for utxo in node.utxos[sender_address]:
+    for utxo in node.blockchain.utxos[sender_address]:
         if sum_ >= data['amount']:
             break
-        else:
+        elif node.blockchain.transaction_unconfirmed(utxo):
             sum_ += utxo.amount
             tx_inputs.append(TransactionInput.from_output(utxo))
 
@@ -82,7 +82,7 @@ def create_transaction():
         amount=data['amount'],
         transaction_inputs=tx_inputs,
         transaction_outputs=tx_outputs,
-        id=transaction_id
+        transaction_id=transaction_id
     )
 
     response = tx.to_dict()
@@ -143,12 +143,12 @@ def submit_transaction():
     node.blockchain.add_transaction(tx)
 
     for ti in tx.transaction_inputs:
-        for idx, utxo in enumerate(node.utxos[tx.sender_address]):
+        for idx, utxo in enumerate(node.blockchain.utxos[tx.sender_address]):
             if utxo.id == ti.previous_output_id:
-                del node.utxos[tx.sender_address][idx]
+                del node.blockchain.utxos[tx.sender_address][idx]
 
     for to in tx.transaction_outputs:
-        node.utxos[to.recipient_address].append(to)
+        node.blockchain.utxos[to.recipient_address].append(to)
 
     # Broadcast if needed and turn off broadcasting for other nodes
     if request.args.get('broadcast', type=int, default=0):

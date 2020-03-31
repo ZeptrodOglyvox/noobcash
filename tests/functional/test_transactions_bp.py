@@ -95,7 +95,7 @@ def test_submit_transaction_local(test_client, node_setup, test_transaction):
     data = response.get_json()
     signature = data['signature']
 
-    utxos_len_before = len(node.utxos[test_transaction.sender_address])
+    utxos_len_before = len(node.blockchain.utxos[test_transaction.sender_address])
     response = test_client.post(
         'transactions/submit?broadcast=0',
         data=json.dumps(dict(
@@ -104,7 +104,7 @@ def test_submit_transaction_local(test_client, node_setup, test_transaction):
         )),
         content_type='application/json'
     )
-    utxos_len_after = len(node.utxos[test_transaction.sender_address])
+    utxos_len_after = len(node.blockchain.utxos[test_transaction.sender_address])
 
     assert_json_200(response)
     data = response.get_json()

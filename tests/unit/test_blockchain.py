@@ -34,7 +34,7 @@ def test_chain_dump(test_trans_ins_outs):
     tx, ins, outs = test_trans_ins_outs
     bch.add_transaction(tx)
     bch.mine()
-    dump = bch.json_dump()
-    bch_resurrected = Blockchain.from_dump(dump)
+    dump = bch.to_dict()
+    bch_resurrected = Blockchain.from_dict_list(dump)
     assert not isinstance(bch_resurrected, str)
     assert bch.chain == bch_resurrected.chain

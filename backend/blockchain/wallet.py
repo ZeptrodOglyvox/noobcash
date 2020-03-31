@@ -18,7 +18,7 @@ class Wallet:
 
 	def balance(self):
 		# TODO: Its pretty weird that the balance is calculated via utxos outside the object
-		return sum(utxo.amount for utxo in node.utxos[self.address])
+		return sum(utxo.amount for utxo in node.blockchain.utxos[self.address] if not node.blockchain.transaction_unconfirmed(utxo))
 
 	# @property
 	# def public_key_rsa(self):
