@@ -31,6 +31,18 @@ def required_fields(*fields):
     return wrapper
 
 
+def bootstrap_endpoint(view):
+    @functools.wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if not node.node_id == 0:
+            response = dict(message='This endpoint is only meant to be used by the bootstrap node.')
+            status_code = 400
+            return make_response(jsonify(response)), status_code
+        else:
+            return view(*args, **kwargs)
+    return wrapped_view
+
+
 def validate_transaction_document(transaction):
     tx_inputs = transaction.transaction_inputs
     tx_ouputs = transaction.transaction_outputs

@@ -5,9 +5,10 @@ from backend.blockchain import Blockchain
 A module representing the node instance backend. API endpoint implementations in corresponding blueprints.
 """
 
-blockchain = Blockchain()
+blockchain = None
 wallet = None  # Initialized by GET to /generate_wallet endpoint
-peers = set()  # Updated with addresses of peers in the form 'url:port'
+peers = []  # Updated with addresses of peers in the form 'url:port'
+node_id = None
 
 
 def create_app(testing=False):
