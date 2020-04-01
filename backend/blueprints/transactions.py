@@ -13,23 +13,6 @@ from backend.blockchain import \
 bp = Blueprint('transactions', __name__, url_prefix='/transactions')
 
 
-@bp.route('/generate_wallet', methods=['GET'])
-def generate_wallet():
-    """
-    Generate a wallet, add it to the node and return the keys to the user.
-    """
-    node.wallet = Wallet()
-
-    response = {
-        'private_key': node.wallet.private_key,
-        'public_key': node.wallet.public_key
-    }
-
-    # TODO: Should wallet also be broadcast and corresponding utxos entry added?
-
-    return make_response(jsonify(response)), 200
-
-
 @bp.route('/create', methods=['POST'])
 @required_fields('sender_address', 'recipient_address', 'amount')
 def create_transaction():

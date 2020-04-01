@@ -10,6 +10,23 @@ from backend.utils import required_fields, bootstrap_endpoint
 bp = Blueprint('nodes', __name__)
 
 
+@bp.route('/generate_wallet', methods=['GET'])
+def generate_wallet():
+    """
+    Generate a wallet, add it to the node and return the keys to the user.
+    """
+    node.wallet = Wallet()
+
+    response = {
+        'private_key': node.wallet.private_key,
+        'public_key': node.wallet.public_key
+    }
+
+    # TODO: Should wallet also be broadcast and corresponding utxos entry added?
+
+    return make_response(jsonify(response)), 200
+
+
 @bp.route('/register', methods=['POST'])
 @required_fields('bootstrap_address', 'port')
 def register_with_bootstrap():
