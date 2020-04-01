@@ -87,3 +87,8 @@ def get_longest_blockchain():
                 cur_length = dump['length']
 
     return ret
+
+
+def balance():
+    # TODO: Possibly move balance() here from backend.blockchain.wallet.Wallet
+    raise NotImplementedError

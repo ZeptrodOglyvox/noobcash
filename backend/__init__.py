@@ -11,7 +11,7 @@ peers = []  # Updated with addresses of peers in the form 'url:port'
 node_id = None
 
 
-def create_app(testing=False):
+def create_app(port=None, testing=False):
     app = Flask(__name__)
 
     app.config.from_mapping(
@@ -23,5 +23,8 @@ def create_app(testing=False):
 
     from .blueprints import blockchain
     app.register_blueprint(blockchain.bp)
+
+    from .blueprints import nodes
+    app.register_blueprint(nodes.bp)
 
     return app

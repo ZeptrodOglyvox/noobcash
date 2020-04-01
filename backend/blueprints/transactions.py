@@ -40,7 +40,7 @@ def create_transaction():
     for utxo in node.blockchain.utxos[sender_address]:
         if sum_ >= data['amount']:
             break
-        elif node.blockchain.transaction_unconfirmed(utxo):
+        elif not node.blockchain.transaction_unconfirmed(utxo):
             sum_ += utxo.amount
             tx_inputs.append(TransactionInput.from_output(utxo))
 

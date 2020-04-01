@@ -13,7 +13,7 @@ def assert_json_200(response):
 
 
 def test_generate_wallet(test_client):
-    response = test_client.get('/transactions/generate_wallet')
+    response = test_client.get('/generate_wallet')
     data = response.get_json()
 
     assert_json_200(response)

@@ -21,21 +21,9 @@ def test_get_chain(test_client, node_setup, test_block):
     response = test_client.get('blockchain/get_chain')
     assert_json_200(response)
     data = response.get_json()
-    bc = Blockchain.from_dict_list(data['chain'])
+    bc = Blockchain.from_dict(data)
 
     assert len(node.blockchain) == data['length']
     assert bc == node.blockchain
-
-
-def test_broadcast_block(test_client, node_setup, test_block):
-    response = test_client.post(
-        'blockchain/broadcast_block',
-        data=json.dumps(test_block.to_dict()),
-        content_type='application/json'
-    )
-    assert_json_200(response)
-    data = response.get_json()
-    assert data['message'] == 'Block broadcast successful.' \
-
 
 

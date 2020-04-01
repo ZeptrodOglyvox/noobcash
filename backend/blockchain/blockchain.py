@@ -109,7 +109,7 @@ class Blockchain:
             length=len(self),
             chain=[b.to_dict() for b in self.chain],
             unconfirmed_transactions=[t.to_dict() for t in self.unconfirmed_transactions],
-            utxos=[t.to_dict() for t in self.utxos]
+            utxos={address: [utxo.to_dict() for utxo in utxo_list] for address, utxo_list in self.utxos.items()}
         )
         return ret
 
