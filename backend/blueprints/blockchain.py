@@ -120,3 +120,9 @@ def broadcast_block():
 
     response = {}
     return jsonify(response), 200
+
+
+@bp.route('/get_last_block', methods=['GET'])
+def get_last_block():
+    response = node.blockchain.last_block.to_dict()
+    return jsonify(response), 200

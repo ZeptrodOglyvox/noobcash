@@ -23,3 +23,12 @@ def test_mine_block_no_competition(nodes, network, test_transaction):
         bc = Blockchain.from_dict(bc_dict)
         assert block in bc
 
+
+def test_last_block(nodes, network):
+    response = req.get(nodes[2] + '/blockchain/get_chain')
+    bc = Blockchain.from_dict(response.json())
+
+    response = req.get(nodes[2] + '/blockchain/get_last_block')
+    last_block = Block.from_dict(response.json())
+
+    assert last_block in bc
