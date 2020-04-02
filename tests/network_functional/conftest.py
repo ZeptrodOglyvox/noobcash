@@ -1,6 +1,8 @@
 import pytest
 import requests as req
 
+from backend.blockchain import Transaction
+
 
 @pytest.fixture()
 def nodes():
@@ -44,3 +46,32 @@ def network(nodes, bootstrap, get_info):
     assert resp.status_code == 200
     info = get_info(0)
     return info['network']
+
+
+@pytest.fixture()
+def test_transaction(nodes, network):
+    response = req.post(
+        nodes[0] + '/transactions/create',
+        json=dict(
+            sender_address=network[0]['public_key'],
+            recipient_address=network[1]['public_key'],
+            amount=10
+        )
+    )
+
+    tx_dict = response.json()
+    response = req.post(
+        nodes[0] + '/transactions/sign',
+        json=tx_dict
+    )
+    data = response.json()
+    signature = data['signature']
+    response = req.post(
+        nodes[0] + '/transactions/submit?broadcast=1',
+        json=dict(
+            transaction=tx_dict,
+            signature=signature
+        )
+    )
+
+    return Transaction.from_dict(tx_dict)

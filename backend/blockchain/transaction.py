@@ -80,14 +80,17 @@ class Transaction:
         """
         Constructs inputs and outputs from dicts as well.
         """
-        tx_dict = deepcopy(tx_dict)
-        for idx, ti in enumerate(tx_dict['transaction_inputs']):
-            tx_dict['transaction_inputs'][idx] = TransactionInput.from_dict(ti)
+        safe_dict = {}
+        for k in tx_dict:
+            if k not in ['transaction_inputs', 'transaction_outputs']:
+                safe_dict[k] = tx_dict[k]
+            else:
+                safe_dict[k] = []
 
-        for idx, to in enumerate(tx_dict['transaction_outputs']):
-            tx_dict['transaction_outputs'][idx] = TransactionOutput.from_dict(to)
+        safe_dict['transaction_inputs'] = [TransactionInput.from_dict(ti) for ti in tx_dict['transaction_inputs']]
+        safe_dict['transaction_outputs'] = [TransactionOutput.from_dict(to) for to in tx_dict['transaction_outputs']]
 
-        return cls(**tx_dict)
+        return cls(**safe_dict)
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__

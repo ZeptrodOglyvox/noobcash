@@ -72,19 +72,20 @@ def get_longest_blockchain():
     # TODO: Manage unconfirmed transactions and utxos
     cur_length = len(node.blockchain)
     cur_last_hash = node.blockchain.last_block.hash
-    ret = None
-    for address in node.network:
-        response = requests.get(address + '/blockchain/get_chain')
-        dump = response.json()
-        chain_length = dump['length']
-        chain_last_hash = dump['chain'][-1]['hash']
+    ret = node.blockchain
+    for node_ in node.network:
+        if not node_['id'] == node.node_id:
+            response = requests.get(node_['ip'] + '/blockchain/get_chain')
+            dump = response.json()
+            chain_length = dump['length']
+            chain_last_hash = dump['chain'][-1]['hash']
 
-        # Imply stricter ordering using last block hash to ensure the same chain will always prevail.
-        if cur_length < chain_length or (cur_length == chain_length and cur_last_hash < chain_last_hash):
-            bc = Blockchain.from_dict(dump)  # Parse the chain to ensure validity
-            if isinstance(bc, Blockchain):
-                ret = bc
-                cur_length = dump['length']
+            # Imply stricter ordering using last block hash to ensure the same chain will always prevail.
+            if cur_length < chain_length or (cur_length == chain_length and cur_last_hash < chain_last_hash):
+                bc = Blockchain.from_dict(dump)  # Parse the chain to ensure validity
+                if isinstance(bc, Blockchain):
+                    ret = bc
+                    cur_length = dump['length']
 
     return ret
 

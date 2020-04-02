@@ -1,7 +1,7 @@
 import json
 
 import requests
-from flask import Blueprint, make_response, jsonify, request
+from flask import Blueprint, jsonify, request
 import backend as node
 from backend.blockchain import Block
 from backend.utils import required_fields, get_longest_blockchain
@@ -50,8 +50,8 @@ def add_block():
     # comparison that any candidate chain should be able to win but can't be easily manipulated to do so.
     #
     # When n blocks are broadcast simultaneously there will be n-1 collisions on all nodes, meaning all nodes will
-    # update their chain to the longest (and also 'greatest' in terms of ordering) chain of their network. The block that
-    # is meant to prevail will either be the first one to arrive at a node, or a copy of the chain containing it will
+    # update their chain to the longest (and also 'greatest' in terms of ordering) chain of their network. The block
+    # meant to prevail will either be the first one to arrive at a node, or a copy of the chain containing it will
     # be received by the node during the update after a collision. All other proposed blocks will arrive after
     # the prevailing block and be rejected after the collision update in at least one node (since they are all broadcast
     # simultaneously). Any latent copies of theirs will disappear in a subsequent collision with the prevailing chain.
@@ -79,9 +79,8 @@ def add_block():
     # This will normally be used by the miner's client to broadcast the block he just mined.
     if block_accepted and request.args.get('broadcast', type=int, default=0):
         response = requests.post(
-            request.host_url + '/broadcast_block',
-            data=json.dumps(block.to_dict()),
-            content_type='application/json'
+            request.host_url + '/blockchain/broadcast_block',
+            json=block.to_dict(),
         )
         if not response.status_code == 200:
             response = dict(message='Block rejected by the network.')
@@ -108,16 +107,16 @@ def broadcast_block():
         response = dict(message='Invalid block JSON provided.')
         return jsonify(response), 400
 
-    for address in node.network:
-        response = requests.post(
-            address + '/add_block?broadcast=0',  # Turn off broadcasting for recipients
-            data=json.dumps(block_dict),
-            content_type='application/json'
-        )
+    for node_ in node.network:
+        if not node_['id'] == node.node_id:
+            response = requests.post(
+                node_['ip'] + '/blockchain/add_block?broadcast=0',  # Turn off broadcasting for recipients
+                json=block_dict,
+            )
 
-        if not response.status_code == 200:
-            response = {}
-            return jsonify(response), 400
+            if not response.status_code == 200:
+                response = {}
+                return jsonify(response), 400
 
     response = {}
     return jsonify(response), 200

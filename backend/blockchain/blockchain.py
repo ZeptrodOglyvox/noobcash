@@ -25,8 +25,16 @@ class Block:
 
     @classmethod
     def from_dict(cls, block_dict):
-        block_dict['transactions'] = [Transaction.from_dict(t) for t in block_dict['transactions']]
-        return cls(**block_dict)
+        safe_dict = {}
+
+        for k in block_dict:
+            if k == 'transactions':
+                safe_dict[k] = []
+            else:
+                safe_dict[k] = block_dict[k]
+
+        safe_dict['transactions'] = [Transaction.from_dict(t) for t in block_dict['transactions']]
+        return cls(**safe_dict)
 
     def to_dict(self):
         ret = deepcopy(self.__dict__)

@@ -23,7 +23,7 @@ def test_create_transaction(nodes, network):
     # Sign document
     response = req.post(
         nodes[0] + '/transactions/sign',
-        json=tx.to_dict()
+        json=tx_dict
     )
     assert response.status_code == 200
     data = response.json()
@@ -33,7 +33,7 @@ def test_create_transaction(nodes, network):
     response = req.post(
         nodes[0] + '/transactions/submit?broadcast=1',
         json=dict(
-            transaction=tx.to_dict(),
+            transaction=tx_dict,
             signature=signature
         )
     )

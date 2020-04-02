@@ -122,9 +122,9 @@ def submit_transaction():
                 )
                 statuses.append(response.status_code)
 
-        if not all(s == 200 for s in statuses):
-            response = dict(message='Transaction rejected by peers.')
-            return jsonify(response), 400
+                if not response.status_code == 200:
+                    response = dict(message='Transaction rejected by the network.')
+                    return jsonify(response), 400
 
     # Validate transaction as-is
     val_result = validate_transaction_document(tx)
