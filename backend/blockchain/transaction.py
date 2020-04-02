@@ -1,5 +1,6 @@
 import binascii
 from collections import OrderedDict
+from copy import deepcopy
 from uuid import uuid4
 
 from Crypto.Hash import SHA1
@@ -79,6 +80,7 @@ class Transaction:
         """
         Constructs inputs and outputs from dicts as well.
         """
+        tx_dict = deepcopy(tx_dict)
         for idx, ti in enumerate(tx_dict['transaction_inputs']):
             tx_dict['transaction_inputs'][idx] = TransactionInput.from_dict(ti)
 

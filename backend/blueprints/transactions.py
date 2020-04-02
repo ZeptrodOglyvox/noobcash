@@ -108,6 +108,24 @@ def submit_transaction():
         status_code = 400
         return jsonify(response), status_code
 
+    statuses = []
+    # Broadcast if needed and turn off broadcasting for other nodes
+    if request.args.get('broadcast', type=int, default=0):
+        for node_ in node.network:
+            if not node_['id'] == node.node_id:
+                response = requests.post(
+                    node_['ip'] + '/transactions/submit?broadcast=0',
+                    json=dict(
+                        transaction=data['transaction'],
+                        signature=data['signature']
+                    )
+                )
+                statuses.append(response.status_code)
+
+        if not all(s == 200 for s in statuses):
+            response = dict(message='Transaction rejected by peers.')
+            return jsonify(response), 400
+
     # Validate transaction as-is
     val_result = validate_transaction_document(tx)
     if isinstance(val_result, str):
@@ -130,18 +148,8 @@ def submit_transaction():
             if utxo.id == ti.previous_output_id:
                 del node.blockchain.utxos[tx.sender_address][idx]
 
-    node.blockchain.utxos[tx.recipient_address] += tx.transaction_outputs
-
-    # Broadcast if needed and turn off broadcasting for other nodes
-    if request.args.get('broadcast', type=int, default=0):
-        for address in node.network:
-            requests.post(
-                address + '/submit?broadcast=0',
-                data=json.dumps(data['transaction']),
-                content_type='application/json'
-            )
-
-    # TODO: What if other nodes say tx is invalid?
+    for to in tx.transaction_outputs:
+        node.blockchain.utxos[to.recipient_address].append(to)
 
     response = dict(message='Transaction added.')
     return jsonify(response), 200
