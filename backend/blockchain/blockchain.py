@@ -40,7 +40,7 @@ class Block:
 class Blockchain:
     def __init__(self, create_genesis=True, pow_difficulty=3):
         self.chain = []
-        self.unconfirmed_transactions = []  # TODO: Should this be a set?
+        self.unconfirmed_transactions = []
         self.pow_difficulty = pow_difficulty
         self.utxos = {}
         if create_genesis:
@@ -109,17 +109,15 @@ class Blockchain:
             length=len(self),
             chain=[b.to_dict() for b in self.chain],
             unconfirmed_transactions=[t.to_dict() for t in self.unconfirmed_transactions],
-            utxos={address: [utxo.to_dict() for utxo in utxo_list] for address, utxo_list in self.utxos.items()}
+            utxos={
+                address: [utxo.to_dict() for utxo in utxo_list]
+                for address, utxo_list in self.utxos.items()
+            }
         )
         return ret
 
     @classmethod
     def from_dict(cls, dict_):
-        """
-        Secure way of creating a BC from a loaded JSON dump.
-        :param dict_list: An iterable of python dictionaries or dict-like objects.
-        :return: Either a Blockchain or a str error message.
-        """
         ret = cls(create_genesis=False)
         for block_dict in dict_['chain']:
             block = Block.from_dict(block_dict)
@@ -131,7 +129,10 @@ class Blockchain:
                 ret.chain.append(block)  # Add genesis block.
 
         ret.unconfirmed_transactions = [Transaction.from_dict(d) for d in dict_['unconfirmed_transactions']]
-        ret.utxos = [TransactionOutput.from_dict(d) for d in dict_['utxos']]
+        ret.utxos = {
+            address: [TransactionOutput.from_dict(utxo) for utxo in utxo_list]
+            for address, utxo_list in dict_['utxos'].items()
+        }
         return ret
 
     def __contains__(self, item):

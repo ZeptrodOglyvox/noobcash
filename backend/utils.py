@@ -3,7 +3,7 @@ import functools
 import requests
 
 import backend as node
-from flask import request, make_response, jsonify
+from flask import request, jsonify
 
 from backend.blockchain import Blockchain
 
@@ -16,14 +16,14 @@ def required_fields(*fields):
                     not request.method == 'POST':
                 response = dict(message='Please submit data as JSON using a POST request.')
                 status_code = 400
-                return make_response(jsonify(response)), status_code
+                return jsonify(response), status_code
 
             data = request.get_json()
 
             if data is None or not all(k in data for k in fields):
                 response = dict(message='Required fields missing.')
                 status_code = 400
-                return make_response(jsonify(response)), status_code
+                return jsonify(response), status_code
             else:
                 return view(*args, **kwargs)
 
@@ -37,7 +37,7 @@ def bootstrap_endpoint(view):
         if not node.node_id == 0:
             response = dict(message='This endpoint is only meant to be used by the bootstrap node.')
             status_code = 400
-            return make_response(jsonify(response)), status_code
+            return jsonify(response), status_code
         else:
             return view(*args, **kwargs)
     return wrapped_view
@@ -73,7 +73,7 @@ def get_longest_blockchain():
     cur_length = len(node.blockchain)
     cur_last_hash = node.blockchain.last_block.hash
     ret = None
-    for address in node.peers:
+    for address in node.network:
         response = requests.get(address + '/blockchain/get_chain')
         dump = response.json()
         chain_length = dump['length']

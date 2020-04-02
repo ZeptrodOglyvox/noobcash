@@ -27,7 +27,7 @@ def create_transaction():
         response = dict(message='Your balance is not enough to complete transaction')
         status_code = 400
 
-        return make_response(jsonify(response)), status_code
+        return jsonify(response), status_code
 
     # TODO: What if recipient doesn't exist, amount is negative etc.?
 
@@ -69,7 +69,7 @@ def create_transaction():
     )
 
     response = tx.to_dict()
-    return make_response(jsonify(response)), 200
+    return jsonify(response), 200
 
 
 @bp.route('/sign', methods=['POST'])
@@ -84,11 +84,11 @@ def sign_transaction():
     except TypeError:
         response = dict(message='Improper transaction json provided.')
         status_code = 400
-        return make_response(jsonify(response)), status_code
+        return jsonify(response), status_code
 
     signature = tx.sign(node.wallet.private_key_rsa)
     response = dict(signature=signature)
-    return make_response(jsonify(response)), 200
+    return jsonify(response), 200
 
 
 @bp.route('/submit', methods=['POST'])
@@ -96,7 +96,7 @@ def sign_transaction():
 def submit_transaction():
     """
     Parse a signed transaction document, check its validity, verify signature and add to local blockchain.
-    Broadcast to the same endpoint for peers if required.
+    Broadcast to the same endpoint for network if required.
     """
     data = request.get_json()
 
@@ -106,21 +106,21 @@ def submit_transaction():
     except (KeyError, TypeError):
         response = dict(message='Improper transaction json provided.')
         status_code = 400
-        return make_response(jsonify(response)), status_code
+        return jsonify(response), status_code
 
     # Validate transaction as-is
     val_result = validate_transaction_document(tx)
     if isinstance(val_result, str):
         response = dict(message=val_result)
         status_code = 400
-        return make_response(jsonify(response)), status_code
+        return jsonify(response), status_code
 
     # Verify signature
     sign_result = verify_signature(tx, data['signature'])
     if isinstance(sign_result, str):
         response = dict(message=sign_result)
         status_code = 400
-        return make_response(jsonify(response)), status_code
+        return jsonify(response), status_code
 
     # Add transactions to local blockchain, remove spent outputs and add new outputs to local UTXO archive
     node.blockchain.add_transaction(tx)
@@ -135,7 +135,7 @@ def submit_transaction():
 
     # Broadcast if needed and turn off broadcasting for other nodes
     if request.args.get('broadcast', type=int, default=0):
-        for address in node.peers:
+        for address in node.network:
             requests.post(
                 address + '/submit?broadcast=0',
                 data=json.dumps(data['transaction']),
@@ -145,4 +145,4 @@ def submit_transaction():
     # TODO: What if other nodes say tx is invalid?
 
     response = dict(message='Transaction added.')
-    return make_response(jsonify(response)), 200
+    return jsonify(response), 200

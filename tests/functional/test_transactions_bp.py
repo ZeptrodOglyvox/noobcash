@@ -49,12 +49,11 @@ def test_required_fields(test_client):
 def test_create_transaction(test_client, node_setup):
     response = test_client.post(
         '/transactions/create',
-        data=json.dumps(dict(
+        json=dict(
             sender_address=node.wallet.address,
             recipient_address='0',
             amount=15
-        )),
-        content_type='application/json'
+        )
     )
 
     assert_json_200(response)

@@ -4,6 +4,7 @@ from backend import create_app
 import backend as node
 import pytest
 from backend.blockchain import Blockchain, Wallet, TransactionOutput, Transaction, Block
+import requests as req
 
 
 def assert_json_200(response):
@@ -25,7 +26,7 @@ def test_client():
 @pytest.fixture()
 def node_setup():
     node.wallet = Wallet()
-
+    node.node_id = 0
     node.blockchain = Blockchain()
     node.blockchain.utxos = {}
 
@@ -85,3 +86,35 @@ def test_block(test_client, test_transaction, signature):
     assert_json_200(response)
     block_dict = response.get_json()
     return Block.from_dict(block_dict)
+
+
+@pytest.fixture()
+def nodes():
+    nodes = [
+        'http://127.0.0.1:5000',
+        'http://127.0.0.1:5001',
+        'http://127.0.0.1:5002'
+    ]
+
+    for url in nodes:
+        req.get(url + '/clear')
+
+    yield nodes
+
+    for url in nodes:
+        req.get(url + '/clear')
+
+
+@pytest.fixture()
+def get_info(nodes):
+    def wrapper(node_id):
+        resp = req.get(nodes[node_id] + '/get_info')
+        assert resp.status_code == 200
+        return resp.json()
+    return wrapper
+
+
+@pytest.fixture()
+def bootstrap(nodes):
+    response = req.get(nodes[0] + '/setup_bootstrap')
+    assert response.status_code == 200
