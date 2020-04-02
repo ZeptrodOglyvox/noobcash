@@ -56,7 +56,7 @@ def register_with_bootstrap():
     registration_response = requests.post(
         data['bootstrap_address'] + '/register_node',
         json=dict(
-            ip=request.url_root,
+            ip=request.host_url,
             wallet_public_key=node.wallet.public_key
         )
     )

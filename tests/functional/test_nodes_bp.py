@@ -88,12 +88,19 @@ def test_setup_node(nodes, get_info):
 
 
 def test_setup_network(nodes, bootstrap, get_info):
-    expected_network = [dict(id=0, ip=f'http://127.0.0.1:{5000}/', public_key=get_info(0)['public_key'])]
+    expected_network = [dict(
+        id=0,
+        ip=f'http://127.0.0.1:{5000}/',
+        public_key=get_info(0)['public_key']
+    )]
+
     for i in range(1, len(nodes)):
         wallet = req.get(nodes[i] + '/generate_wallet').json()
         req.post(nodes[i] + '/register', json=dict(bootstrap_address=nodes[0]))
-        expected_network.append(
-            dict(id=i, ip=f'http://127.0.0.1:{5000+i}/', public_key=wallet['public_key'])
+        expected_network.append(dict(
+            id=i,
+            ip=f'http://127.0.0.1:{5000+i}/',
+            public_key=wallet['public_key'])
         )
 
     response = req.get(nodes[0] + '/setup_network')
