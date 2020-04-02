@@ -12,20 +12,6 @@ def assert_json_200(response):
     assert response.status_code == 200
 
 
-def test_generate_wallet(test_client):
-    response = test_client.get('/generate_wallet')
-    data = response.get_json()
-
-    assert_json_200(response)
-    private_key = RSA.import_key(binascii.unhexlify(data['private_key']))
-    public_key = RSA.import_key(binascii.unhexlify(data['public_key']))
-    assert private_key.publickey() == public_key
-
-    from backend import wallet
-    assert wallet is not None
-    assert wallet.private_key_rsa.publickey() == wallet.public_key_rsa
-
-
 def test_required_fields(test_client):
     response = test_client.post('/transactions/create')
     assert response.content_type == 'application/json'
@@ -84,7 +70,7 @@ def test_sign_transaction(test_client, node_setup, test_transaction):
     assert not isinstance(verify_signature(test_transaction, signature), str)
 
 
-def test_submit_transaction_local(test_client, node_setup, test_transaction):
+def test_submit_transaction(test_client, node_setup, test_transaction):
     response = test_client.post(
         'transactions/sign',
         data=json.dumps(test_transaction.to_dict()),

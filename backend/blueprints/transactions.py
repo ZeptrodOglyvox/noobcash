@@ -130,8 +130,7 @@ def submit_transaction():
             if utxo.id == ti.previous_output_id:
                 del node.blockchain.utxos[tx.sender_address][idx]
 
-    for to in tx.transaction_outputs:
-        node.blockchain.utxos[to.recipient_address].append(to)
+    node.blockchain.utxos[tx.recipient_address] += tx.transaction_outputs
 
     # Broadcast if needed and turn off broadcasting for other nodes
     if request.args.get('broadcast', type=int, default=0):

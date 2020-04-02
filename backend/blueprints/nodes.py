@@ -4,7 +4,7 @@ import requests
 from flask import Blueprint, request, make_response, jsonify, redirect, url_for
 import backend as node
 from backend import Blockchain
-from backend.blockchain import Wallet
+from backend.blockchain import Wallet, Transaction, TransactionOutput
 from backend.utils import required_fields, bootstrap_endpoint
 
 bp = Blueprint('nodes', __name__)
@@ -136,9 +136,14 @@ def setup_node():
 @bp.route('/setup_bootstrap', methods=['GET'])
 def setup_bootstrap():
     node.node_id = 0
-    node.blockchain = Blockchain(create_genesis=True)
     node.wallet = Wallet()
-    node.blockchain.utxos[node.wallet.public_key] = []
+    init_tx = Transaction('0', node.wallet.public_key, 300)
+    init_out = TransactionOutput(init_tx.transaction_id, node.wallet.public_key, 300)
+    node.blockchain = Blockchain(
+        create_genesis=True,
+        initial_transaction=init_tx
+    )
+    node.blockchain.utxos[node.wallet.public_key] = [init_out]
     node.network = [dict(
         id=node.node_id,
         ip=request.host_url,

@@ -38,17 +38,18 @@ class Block:
 
 
 class Blockchain:
-    def __init__(self, create_genesis=True, pow_difficulty=3):
+    def __init__(self, create_genesis=True, initial_transaction=None, pow_difficulty=3):
         self.chain = []
         self.unconfirmed_transactions = []
         self.pow_difficulty = pow_difficulty
         self.utxos = {}
         if create_genesis:
-            self.create_genesis_block()
-            self.last_block.hash = self.last_block.compute_hash()
+            self.create_genesis_block(initial_transaction)
 
-    def create_genesis_block(self):
+    def create_genesis_block(self, initial_transaction):
         genesis_block = Block(index=0, previous_hash='0')
+        if initial_transaction is not None:
+            genesis_block.transactions.append(initial_transaction)
         genesis_block.compute_hash()
         self.chain.append(genesis_block)
 
