@@ -113,7 +113,7 @@ def setup_network():
     if not failed_nodes:
         response, status = dict(message='Network setup complete.'), 200
     else:
-        response, status = dict(message=f'Nodes {failed_nodes} failed setup, the rest of network is complete.'), 400
+        response, status = dict(message=f'Nodes {failed_nodes} failed setup, the rest of network is complete.'), 202
     return jsonify(response), status
 
 

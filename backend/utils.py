@@ -34,7 +34,7 @@ def bootstrap_endpoint(view):
     def wrapped_view(*args, **kwargs):
         if not node.node_id == 0:
             response = dict(message='This endpoint is only meant to be used by the bootstrap node.')
-            status_code = 400
+            status_code = 401
             return jsonify(response), status_code
         else:
             return view(*args, **kwargs)

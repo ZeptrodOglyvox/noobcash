@@ -19,7 +19,7 @@ def mine_block():
 
     if mined_block is None:
         response = dict(message='No unconfirmed transactions to mine.')
-        return jsonify(response), 400
+        return jsonify(response), 202
 
     response = mined_block.to_dict()
     return jsonify(response), 200
@@ -93,7 +93,7 @@ def add_block():
         )
         if not response.status_code == 200:
             response = dict(message='Block rejected by the network.')
-            return jsonify(response), 400
+            return jsonify(response), 202
 
         network_messages = response.json()['network_messages']
 
@@ -111,7 +111,7 @@ def add_block():
             network_messages=network_messages,
             attempt_result=attempt_result
         )
-        status = 400
+        status = 202
 
     return jsonify(response), status
 

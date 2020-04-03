@@ -127,7 +127,7 @@ def submit_transaction():
 
                 if not response.status_code == 200:
                     response = dict(message='Transaction rejected by the network.')
-                    return jsonify(response), 400
+                    return jsonify(response), 202
 
     # Validate transaction as-is
     val_result = validate_transaction_document(tx)
