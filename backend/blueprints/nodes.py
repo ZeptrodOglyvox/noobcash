@@ -26,6 +26,30 @@ def get_info():
     return jsonify(response), 200
 
 
+@bp.route('/setup_bootstrap', methods=['POST'])
+@required_fields('initial_amount')
+def setup_bootstrap():
+    data = request.get_json()
+
+    node.node_id = 0
+    node.wallet = Wallet()
+    init_tx = Transaction('0', node.wallet.public_key, data['initial_amount'])
+    init_out = TransactionOutput(init_tx.transaction_id, node.wallet.public_key, data['initial_amount'])
+    node.blockchain = Blockchain(
+        create_genesis=True,
+        initial_transaction=init_tx
+    )
+    node.blockchain.utxos[node.wallet.public_key] = [init_out]
+    node.network = [dict(
+        id=node.node_id,
+        ip=request.host_url,
+        public_key=node.wallet.public_key
+    )]
+
+    response, status = dict(message='Bootstrap node setup complete.'), 200
+    return make_response(jsonify(response)), 200
+
+
 @bp.route('/generate_wallet', methods=['GET'])
 def generate_wallet():
     """
@@ -131,30 +155,6 @@ def setup_node():
 
     response, status = dict(message='Node setup complete.'), 200
     return jsonify(response), status
-
-
-@bp.route('/setup_bootstrap', methods=['POST'])
-@required_fields('initial_amount')
-def setup_bootstrap():
-    data = request.get_json()
-
-    node.node_id = 0
-    node.wallet = Wallet()
-    init_tx = Transaction('0', node.wallet.public_key, data['initial_amount'])
-    init_out = TransactionOutput(init_tx.transaction_id, node.wallet.public_key, data['initial_amount'])
-    node.blockchain = Blockchain(
-        create_genesis=True,
-        initial_transaction=init_tx
-    )
-    node.blockchain.utxos[node.wallet.public_key] = [init_out]
-    node.network = [dict(
-        id=node.node_id,
-        ip=request.host_url,
-        public_key=node.wallet.public_key
-    )]
-
-    response, status = dict(message='Bootstrap node setup complete.'), 200
-    return make_response(jsonify(response)), 200
 
 
 @bp.route('/clear', methods=['GET'])

@@ -10,7 +10,7 @@ network = []  # Updated with dicts of the form {node_id: ..., url: ..., public_k
 node_id = None
 
 
-def create_app(app_id=0, testing=False):
+def create_app(testing=False):
     app = Flask(__name__)
 
     app.config.from_mapping(

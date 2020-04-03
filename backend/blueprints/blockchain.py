@@ -44,12 +44,13 @@ def add_block():
     # the position in the blockchain. One of them should prevail, else all miners will be informed of their rejection
     # while all local copies of the blockchain will have a different block at the same index. To achieve this, during
     # consensus we attempt to imply a random total ordering between same-length chains by using an additional
-    # comparison that any candidate chain should be able to win but can't be easily manipulated to do so.
+    # tie-breaker that any candidate chain should be able to win but can't be easily manipulated to do so. For now
+    # we use the lexicographic comparison of the last block hashes of each chain.
     #
     # When n blocks are broadcast simultaneously there will be n-1 collisions on all nodes, meaning all nodes will
     # update their chain to the longest (and also 'greatest' in terms of ordering) chain of their network. The block
     # meant to prevail will either be the first one to arrive at a node, or a copy of the chain containing it will
-    # be received by the node during the update after a collision. All other proposed blocks will arrive after
+    # be received by the node during the consensus update after a collision. All other proposed blocks will arrive after
     # the prevailing block and be rejected after the collision update in at least one node (since they are all broadcast
     # simultaneously). Any latent copies of theirs will disappear in a subsequent collision with the prevailing chain.
     #
@@ -148,3 +149,9 @@ def broadcast_block():
 def get_last_block():
     response = node.blockchain.last_block.to_dict()
     return jsonify(response), 200
+
+
+@bp.route('/consensus', methods=['GET'])
+def consensus():
+    node.blockchain.replace(get_longest_blockchain())
+    return jsonify({}), 200
