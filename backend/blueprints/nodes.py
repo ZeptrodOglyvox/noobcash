@@ -1,10 +1,7 @@
-import json
-
 import requests
-from flask import Blueprint, request, make_response, jsonify, redirect, url_for
+from flask import Blueprint, request, make_response, jsonify
 import backend as node
-from backend import Blockchain
-from backend.blockchain import Wallet, Transaction, TransactionOutput
+from backend.blockchain import Wallet, Transaction, TransactionOutput, Blockchain
 from backend.utils import required_fields, bootstrap_endpoint, balance
 
 bp = Blueprint('nodes', __name__)
@@ -167,4 +164,4 @@ def clear():
     node.blockchain = None
     node.network = []
 
-    return redirect('/'), 200
+    return jsonify(dict(message='Node cleared.')), 200

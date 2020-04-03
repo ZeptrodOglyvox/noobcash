@@ -1,5 +1,3 @@
-import json
-
 import requests
 from flask import Blueprint, jsonify, request
 import backend as node
@@ -75,7 +73,7 @@ def add_block():
         attempt_result = f'{node.node_id} accepted immediately.'
         block_accepted = True
     else:
-        node.blockchain = get_longest_blockchain()
+        node.blockchain.replace(get_longest_blockchain())
         if block in node.blockchain:
             attempt_result = f'{node.node_id} had to get consensus.'
             block_accepted = True

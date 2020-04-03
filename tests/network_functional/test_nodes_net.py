@@ -1,7 +1,7 @@
 import backend as node
 import requests as req
 
-from backend import Blockchain
+from backend.blockchain import Blockchain
 
 
 def test_generate_wallet(nodes):

@@ -37,6 +37,11 @@ def node_setup():
     ]
     node.blockchain.utxos['0'] = []
 
+    node.network = [
+        dict(public_key=node.wallet.public_key),
+        dict(public_key='0')
+    ]
+
 
 @pytest.fixture()
 def test_transaction(node_setup, test_client):
@@ -86,4 +91,3 @@ def test_block(test_client, test_transaction, signature):
     assert_json_200(response)
     block_dict = response.get_json()
     return Block.from_dict(block_dict)
-

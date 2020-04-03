@@ -1,13 +1,12 @@
-from flask import Flask, jsonify, make_response
-from backend.blockchain import Blockchain
-
 """
 A module representing the node instance backend. API endpoint implementations in corresponding blueprints.
 """
 
+from flask import Flask
+
 blockchain = None
 wallet = None  # Initialized by GET to /generate_wallet endpoint
-network = []  # Updated with addresses of network in the form 'url:port'
+network = []  # Updated with dicts of the form {node_id: ..., url: ..., public_key: ...}
 node_id = None
 
 

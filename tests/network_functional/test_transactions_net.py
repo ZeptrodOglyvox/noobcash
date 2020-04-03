@@ -1,7 +1,5 @@
 import requests as req
-import backend as node
-from backend import Blockchain
-from backend.blockchain import Transaction
+from backend.blockchain import Transaction, Blockchain
 
 
 def test_create_transaction(nodes, network):

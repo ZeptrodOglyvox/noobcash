@@ -10,10 +10,7 @@ def test_trans_ins_outs():
         TransactionInput('1', 10)
     ]
 
-    outs = [
-        TransactionOutput('mytrans', '321', 15),
-        TransactionOutput('mytrans', '123', 5)
-    ]
+    outs = []
 
     tx = Transaction('123', '321', 15, ins, outs, 'mytrans')
 

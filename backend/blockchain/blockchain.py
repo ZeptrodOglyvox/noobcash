@@ -2,7 +2,7 @@ import time
 from copy import deepcopy
 from hashlib import sha256
 import json
-
+from threading import RLock
 from .transaction import Transaction, TransactionOutput
 
 
@@ -50,7 +50,8 @@ class Blockchain:
         self.chain = []
         self.unconfirmed_transactions = []
         self.pow_difficulty = pow_difficulty
-        self.utxos = {}
+        self.lock = RLock()
+        self.utxos = {}  # An index of unspent transaction outputs for each public key: {pk1:[utxo1, ...], pk2:[], ...}
         if create_genesis:
             self.create_genesis_block(initial_transaction)
 
@@ -93,17 +94,32 @@ class Blockchain:
         elif not Blockchain.is_valid_proof(block, proof_, self.pow_difficulty):
             return 'Proof invalid.'
         else:
-            block.hash = proof_
-            self.chain.append(block)
+            with self.lock:
+                block.hash = proof_
+                self.chain.append(block)
 
-            for tx in block.transactions:
-                if tx in self.unconfirmed_transactions:
-                    self.unconfirmed_transactions.remove(tx)
+                for tx in block.transactions:
+                    if tx in self.unconfirmed_transactions:
+                        self.unconfirmed_transactions.remove(tx)
 
             return True
 
     def add_transaction(self, transaction):
-        self.unconfirmed_transactions.append(transaction)
+        """
+        Adds transaction to unconfirmed transactions, manages UTXOs as well.
+        :param transaction:
+        :return:
+        """
+        with self.lock:
+            self.unconfirmed_transactions.append(transaction)
+
+            for ti in transaction.transaction_inputs:
+                for utxo in self.utxos[transaction.sender_address]:
+                    if utxo.id == ti.previous_output_id:
+                        self.utxos[transaction.sender_address].remove(utxo)
+
+            for to in transaction.transaction_outputs:
+                self.utxos[to.recipient_address].append(to)
 
     def transaction_unconfirmed(self, transaction):
         unconfirmed_ids = [tx.transaction_id for tx in self.unconfirmed_transactions]
@@ -122,7 +138,8 @@ class Blockchain:
 
         proof = self.mine_block(new_block, self.pow_difficulty)
         new_block.hash = proof
-        self.unconfirmed_transactions = self.unconfirmed_transactions[Block.capacity:]
+        with self.lock:
+            self.unconfirmed_transactions = self.unconfirmed_transactions[Block.capacity:]
         return new_block
 
     def to_dict(self):
@@ -155,6 +172,13 @@ class Blockchain:
             for address, utxo_list in dict_['utxos'].items()
         }
         return ret
+
+    def replace(self, other):
+        with self.lock:
+            self.chain = other.chain
+            self.utxos = other.utxos
+            self.unconfirmed_transactions = other.unconfirmed_transactions
+            self.pow_difficulty = other.pow_difficulty
 
     def __contains__(self, item):
         return self.chain[item.index] == item

@@ -1,6 +1,6 @@
 import json
 import backend as node
-from backend import Blockchain
+from backend.blockchain import Blockchain
 
 
 def assert_json_200(response):

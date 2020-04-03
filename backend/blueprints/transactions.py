@@ -1,14 +1,10 @@
-import json
 from uuid import uuid4
-
 import requests
-from flask import Blueprint, make_response, jsonify, request
+from flask import Blueprint, jsonify, request
 
 import backend as node
 from backend.utils import required_fields, validate_transaction_document, balance
-
-from backend.blockchain import \
-    Transaction, TransactionInput, TransactionOutput, Wallet, verify_signature
+from backend.blockchain import Transaction, TransactionInput, TransactionOutput, verify_signature
 
 bp = Blueprint('transactions', __name__, url_prefix='/transactions')
 
@@ -20,7 +16,7 @@ def create_transaction():
     Create a valid transaction document using any UTXOs available and return it.
     """
     data = request.get_json()
-    response = {}
+    response = None
     status_code = None
 
     # Proposed transaction document validity checks
@@ -32,7 +28,7 @@ def create_transaction():
         any(node_['public_key'] == data['sender_address'] for node_ in node.network) and
         isinstance(data['amount'], (int, float))
     ):
-        response = dict(message='Your balance is not enough to complete transaction')
+        response = dict(message='Please make sure the proposed transaction is valid.')
         status_code = 400
 
     if response and status_code:
@@ -147,16 +143,8 @@ def submit_transaction():
         status_code = 400
         return jsonify(response), status_code
 
-    # Add transactions to local blockchain, remove spent outputs and add new outputs to local UTXO archive
+    # Add transaction to local blockchain
     node.blockchain.add_transaction(tx)
-
-    for ti in tx.transaction_inputs:
-        for idx, utxo in enumerate(node.blockchain.utxos[tx.sender_address]):
-            if utxo.id == ti.previous_output_id:
-                del node.blockchain.utxos[tx.sender_address][idx]
-
-    for to in tx.transaction_outputs:
-        node.blockchain.utxos[to.recipient_address].append(to)
 
     response = dict(message='Transaction added.')
     return jsonify(response), 200
