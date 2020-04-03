@@ -17,13 +17,12 @@ def get_chain():
 
 @bp.route('/mine_block', methods=['GET'])
 def mine_block():
-    mine_result = node.blockchain.mine()
+    mined_block = node.blockchain.mine()
 
-    if not mine_result:
+    if mined_block is None:
         response = dict(message='No unconfirmed transactions to mine.')
         return jsonify(response), 400
 
-    mined_block = node.blockchain.last_block
     response = mined_block.to_dict()
     return jsonify(response), 200
 
@@ -68,15 +67,27 @@ def add_block():
         response = dict(message='Invalid block JSON provided.')
         return jsonify(response), 400
 
+    attempt_result = None
     block_accepted = False
-    if node.blockchain.add_block(block, block.hash):
+
+    result = node.blockchain.add_block(block)
+    if not isinstance(result, str):
+        attempt_result = f'{node.node_id} accepted immediately.'
         block_accepted = True
     else:
         node.blockchain = get_longest_blockchain()
-        if block in node.blockchain or node.blockchain.add_block(block, block.hash):
+        if block in node.blockchain:
+            attempt_result = f'{node.node_id} had to get consensus.'
             block_accepted = True
+        else:
+            result = node.blockchain.add_block(block)
+            if not isinstance(result, str):
+                block_accepted = True
+            else:
+                attempt_result = f'{node.node_id} rejected block with message "{result}"'
 
     # This will normally be used by the miner's client to broadcast the block he just mined.
+    network_messages = []
     if block_accepted and request.args.get('broadcast', type=int, default=0):
         response = requests.post(
             request.host_url + '/blockchain/broadcast_block',
@@ -86,11 +97,22 @@ def add_block():
             response = dict(message='Block rejected by the network.')
             return jsonify(response), 400
 
+        network_messages = response.json()['network_messages']
+
     if block_accepted:
-        response = dict(message='Block added successfully.')
+        response = dict(
+            message='Block added successfully.',
+            network_messages=network_messages,
+            attempt_result=attempt_result
+        )
+
         status = 200
     else:
-        response = dict(message='Block rejected by node.')
+        response = dict(
+            message='Block rejected by node.',
+            network_messages=network_messages,
+            attempt_result=attempt_result
+        )
         status = 400
 
     return jsonify(response), status
@@ -107,6 +129,7 @@ def broadcast_block():
         response = dict(message='Invalid block JSON provided.')
         return jsonify(response), 400
 
+    msg_pool = []
     for node_ in node.network:
         if not node_['id'] == node.node_id:
             response = requests.post(
@@ -117,8 +140,9 @@ def broadcast_block():
             if not response.status_code == 200:
                 response = {}
                 return jsonify(response), 400
+            msg_pool.append(response.json()['attempt_result'])
 
-    response = {}
+    response = dict(network_messages=msg_pool)
     return jsonify(response), 200
 
 

@@ -54,11 +54,11 @@ class Blockchain:
         if create_genesis:
             self.create_genesis_block(initial_transaction)
 
-    def create_genesis_block(self, initial_transaction):
+    def create_genesis_block(self, initial_transaction=None):
         genesis_block = Block(index=0, previous_hash='0')
         if initial_transaction is not None:
             genesis_block.transactions.append(initial_transaction)
-        genesis_block.compute_hash()
+        genesis_block.hash = genesis_block.compute_hash()
         self.chain.append(genesis_block)
 
     @property
@@ -79,15 +79,27 @@ class Blockchain:
     def is_valid_proof(block, proof, difficulty):
         return proof.startswith('0' * difficulty) and proof == block.compute_hash()
 
-    def add_block(self, block, proof):
+    def add_block(self, block, proof=None):
+        """
+        Add a Block to the chain.
+        :param block: Block to be added.
+        :param proof: (opt) Proof-of-work suggested for block, if not provided block.hash will be used as proof.
+        :return: True if block is added, False if deemed invalid.
+        """
+        proof_ = proof or block.hash
         previous_hash = self.last_block.hash
         if previous_hash != block.previous_hash:
-            return False
-        elif not Blockchain.is_valid_proof(block, proof, self.pow_difficulty):
-            return False
+            return 'Previous hash incorrect.'
+        elif not Blockchain.is_valid_proof(block, proof_, self.pow_difficulty):
+            return 'Proof invalid.'
         else:
-            block.hash = proof
+            block.hash = proof_
             self.chain.append(block)
+
+            for tx in block.transactions:
+                if tx in self.unconfirmed_transactions:
+                    self.unconfirmed_transactions.remove(tx)
+
             return True
 
     def add_transaction(self, transaction):
@@ -99,7 +111,7 @@ class Blockchain:
 
     def mine(self):
         if not self.unconfirmed_transactions:
-            return False
+            return None
 
         last_block = self.last_block
         new_block = Block(
@@ -109,9 +121,9 @@ class Blockchain:
         )
 
         proof = self.mine_block(new_block, self.pow_difficulty)
-        self.add_block(new_block, proof)
+        new_block.hash = proof
         self.unconfirmed_transactions = self.unconfirmed_transactions[Block.capacity:]
-        return new_block.index
+        return new_block
 
     def to_dict(self):
         ret = dict(
@@ -131,8 +143,8 @@ class Blockchain:
         for block_dict in dict_['chain']:
             block = Block.from_dict(block_dict)
             if not block.index == 0:
-                block_added = ret.add_block(block, block.hash)
-                if not block_added:
+                block_added = ret.add_block(block)
+                if isinstance(block_added, str):
                     return 'The chain dump is invalid or has been tampered with.'
             else:
                 ret.chain.append(block)  # Add genesis block.
@@ -148,7 +160,9 @@ class Blockchain:
         return self.chain[item.index] == item
 
     def __eq__(self, other):
-        return self.chain == other.chain
+        return self.chain == other.chain and \
+               self.unconfirmed_transactions == other.unconfirmed_transactions and \
+               self.utxos == other.utxos
 
     def __len__(self):
         return len(self.chain)

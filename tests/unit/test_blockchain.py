@@ -19,8 +19,9 @@ def test_blockchain_mine(test_trans_ins_outs):
     tx, ins, outs = test_trans_ins_outs
 
     bch.add_transaction(tx)
-    bch.mine()
+    result = bch.add_block(bch.mine())
 
+    assert not isinstance(result, str)
     assert len(bch.chain) == 2
     assert tx in bch.last_block.transactions
     assert bch.last_block.nonce
