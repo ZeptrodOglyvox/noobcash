@@ -2,64 +2,126 @@ import click
 import sys
 import requests
 from flask import request
+import json
+# pip install click-shell
+# from click_shell import shell
 import backend as node
 
-# TODO : match address:port to node/client numbers
-# Not sure if this matching is correct
 # assume clients will run at ports 5000 and 5001 of PCs
 
 # bootstrap_node will be PC0:5000
+bootstrap_url = "http://10.0.0.1:5000"
+my_pkey = ""
 node_url_dict = {'id0': "http://10.0.0.1:5000"}
-
+n_clients = 5
 myurl = ""
+is_bootstrap = False
 
 # Each node/client will have this list of transactions
 # new transactions to perform will be picked from this
 # list and then removed 
 transactions = []
 
+@click.group()
+# @shell(prompt='cli >>', intro='Starting up node...')
+@click.option('--bootstrap-node', '--boot', '--bn', \
+    help='True if this is going to be the bootstrap node')
+@click.option('--n', help='Number of clients')
+@click.option('--host')
+@click.option('--port')
+def cli(bn: bool = False, n: int = 5, \
+    host: str = "127.0.0.1", port: str = "5000"):
+    is_bootstrap = bn
+    n_clients = n
+    myurl = host + ":" + port
 
+@cli.command()
+def get_bootstrap():
+    click.echo("in get bootstrap\n")
+    click.echo("Bootstrap is {}".format(is_bootstrap))    
 
-@click.command()
+@cli.command()
 @click.argument('file', type=click.File('r'))
-def read_transactions(file):
+def read_transactions(ctx,file):
     """ Read the transactions to be perorfmed 
     from a txt file and store them in local list.
     """ 
 
     myid = str(file).split('transactions')  
-    id = 'id' + myid[1].split('.txt')[0]
+    id = int(myid[1].split('.txt')[0])
     # click.echo(myid)
     # click.echo(id)
     myurl = node_url_dict[id]
     click.echo(myurl)
     for line in file:
-        node_id = line.split()[0]
+        node_id = int(line.split()[0][-1])
         amount = int(line.split()[1])
         transactions.append((node_id, amount))
     
     click.echo(transactions[:10])
 
-@click.command()
-@click.argument('node_address') 
-def register_node(node_address):
-    """ This will add the current node (myurl) to other nodes' (node_address) 
-    peers list. The backend `/register_node` endpoint is called """
-    # This will be called in main before anything else. Once all nodes 
-    # have called it they can proceed with reading transactions.txt.
-    # Note a reply (200 OK) means that the current node was 
-    # registered in other nodes' peer list.
-    # This node will have its own peers list updated when it receives 
-    # requests from other nodes
-
-    for client in node_url_dict.values:
-        url = client + '/register_node'
+@cli.command("boot-setup")
+def setup_bootstrap():
+    if not is_bootstrap:
+        click.echo("This is not the bootstrap node!\
+        You should run wallet instead!")
+    else:
+        amount = 100*n_clients
+        url = bootstrap_url + '/setup_bootstrap'
         data = {
-            'node_address': myurl
+            'initial_amount' : amount
         }
-        response = requests.post(url=url, data=data)
+        response = requests.post(url=url, json=data)
+        if response.status_code == 200:
+            if bootstrap_url == node.network[0]["ip"]:
+                # It should be
+                myurl = bootstrap_url
+                myid = node.network[0]["id"]
+                my_pkey = node.network[0]["public_key"]
+                click.echo(response.content["message"])
 
-@click.command("t")
+@cli.command("wallet")
+def generate_wallet():
+    url = myurl + '/generate_wallet'
+    response = requests.get(url=url)
+    if response.status_code == 200:
+        my_pkey = response.content["public_key"]
+
+@cli.command("register")
+def register_node():
+    """ This will add the current node (myurl) to other nodes' 
+    peers list. The backend `/register_node` endpoint is called """
+
+    url = myurl + '/register'
+    data = {
+        'bootstrap_address': bootstrap_url
+    }
+    response = requests.post(url=url, data=data)
+    if response.status_code == 400:
+        click.echo("{}".format(response.content["message"]))
+    else:
+        click.echo("{}".format(response.content["message"]))
+        myid = response.content["node_id"]
+        node.node_id = myid
+
+
+@cli.command("ready")
+def check_all_nodes_registered():
+    return len(node.network) == n_clients
+    
+@cli.command("net-setup")    
+def setup_network():
+    if not is_bootstrap:
+        click.echo("This function is only called \
+            from the bootstrap node.")
+    else:
+        url = bootstrap_url + '/setup_network'
+        response = requests.get(url=url)
+        if response.status_code == 200:
+            click.echo("{}".format(response.content["message"]))
+
+
+@cli.command("t")
 @click.argument('recipient_address') 
 @click.argument('amount')
 def  new_transaction(recipient_address, amount):
@@ -67,7 +129,7 @@ def  new_transaction(recipient_address, amount):
     <amount> NBCs.  """
     pass
 
-@click.command("view")
+@cli.command("view")
 def view_last_block_transactions():
     url = myurl + '/blockchain/get_last_block'
     response = requests.get(url=url)
@@ -83,19 +145,26 @@ def view_last_block_transactions():
     else:
         click.echo("Could not get last block transactions.\n")
 
+@cli.command("balance")
+def show_balance():
+    pass
 
-         
+def start():
+    cli(obj={})         
 
 if __name__ == '__main__':
+    start()
     # 1.
     # update_peers()
     # 2.
-    read_transactions()  
+    # make_bootstrap()
+    # get_bootstrap()
+    # read_transactions()  
     # 3. begin transacting
-    while transactions:
-        new_tx = transactions.pop(0)
-        recipient_address = node_url_dict[new_tx[0]]
-        amount = new_tx[1]
-        new_transaction(recipient_address, amount)
+    # while transactions:
+    #     new_tx = transactions.pop(0)
+    #     recipient_address = node_url_dict[new_tx[0]]
+    #     amount = new_tx[1]
+    #     new_transaction(recipient_address, amount)
 
 
