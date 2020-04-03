@@ -3,6 +3,7 @@ import binascii
 from Crypto.PublicKey import RSA
 
 import backend as node
+from backend.utils import balance
 
 
 def test_get_info(test_client, node_setup):
@@ -13,7 +14,7 @@ def test_get_info(test_client, node_setup):
         node_id=node.node_id,
         public_key=node.wallet.public_key,
         chain_length=len(node.blockchain),
-        balance=node.wallet.balance(),
+        balance=balance(),
         network=node.network
     )
 

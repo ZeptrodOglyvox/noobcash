@@ -69,7 +69,6 @@ def validate_transaction_document(transaction):
 
 
 def get_longest_blockchain():
-    # TODO: Manage unconfirmed transactions and utxos
     cur_length = len(node.blockchain)
     cur_last_hash = node.blockchain.last_block.hash
     ret = node.blockchain
@@ -91,5 +90,9 @@ def get_longest_blockchain():
 
 
 def balance():
-    # TODO: Possibly move balance() here from backend.blockchain.wallet.Wallet
-    raise NotImplementedError
+    """
+    :return: The sum of all UTXOs with this node as the recipient that aren't referencing unconfirmed transactions.
+    """
+    public_key = node.wallet.public_key
+    utxos = node.blockchain.utxos[public_key]
+    return sum(utxo.amount for utxo in utxos if not node.blockchain.transaction_unconfirmed(utxo))

@@ -5,7 +5,7 @@ import requests
 from flask import Blueprint, make_response, jsonify, request
 
 import backend as node
-from backend.utils import required_fields, validate_transaction_document
+from backend.utils import required_fields, validate_transaction_document, balance
 
 from backend.blockchain import \
     Transaction, TransactionInput, TransactionOutput, Wallet, verify_signature
@@ -23,13 +23,20 @@ def create_transaction():
     response = {}
     status_code = None
 
-    if node.wallet.balance() < data['amount']:
+    # Proposed transaction document validity checks
+    if balance() < data['amount']:
+        response = dict(message='Your balance is not enough to complete transaction')
+        status_code = 400
+    elif not (
+        any(node_['public_key'] == data['sender_address'] for node_ in node.network) and
+        any(node_['public_key'] == data['sender_address'] for node_ in node.network) and
+        isinstance(data['amount'], (int, float))
+    ):
         response = dict(message='Your balance is not enough to complete transaction')
         status_code = 400
 
+    if response and status_code:
         return jsonify(response), status_code
-
-    # TODO: What if recipient doesn't exist, amount is negative etc.?
 
     transaction_id = str(uuid4())
 

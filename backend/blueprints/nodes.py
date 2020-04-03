@@ -5,7 +5,7 @@ from flask import Blueprint, request, make_response, jsonify, redirect, url_for
 import backend as node
 from backend import Blockchain
 from backend.blockchain import Wallet, Transaction, TransactionOutput
-from backend.utils import required_fields, bootstrap_endpoint
+from backend.utils import required_fields, bootstrap_endpoint, balance
 
 bp = Blueprint('nodes', __name__)
 
@@ -23,7 +23,7 @@ def get_info():
         address=request.host_url,
         public_key=node.wallet.public_key if node.wallet else '',
         chain_length=len(node.blockchain) if node.blockchain else -1,
-        balance=node.wallet.balance() if node.wallet and node.blockchain else -1,
+        balance=balance() if node.wallet and node.blockchain else -1,
         network=node.network
     )
     return jsonify(response), 200
@@ -101,19 +101,22 @@ def register_node():
 @bootstrap_endpoint
 def setup_network():
     statuses = {}
-    for peer in node.network:
-        # TODO: Manage responses to setup
-        if not peer['id'] == 0:
+    for node_ in node.network:
+        if not node_['id'] == 0:
             resp = requests.post(
-                peer['ip'] + '/setup_node',
+                node_['ip'] + '/setup_node',
                 json=dict(
                     network=node.network,
                     blockchain=node.blockchain.to_dict()
                 )
             )
-            statuses[peer['ip']] = resp.status_code
+            statuses[node_['ip']] = resp.status_code
 
-    response, status = dict(message='Network setup complete.', statuses=statuses), 200
+    failed_nodes = [k for k in statuses if statuses[k] != 200]
+    if not failed_nodes:
+        response, status = dict(message='Network setup complete.'), 200
+    else:
+        response, status = dict(message=f'Nodes {failed_nodes} failed setup, the rest of network is complete.'), 400
     return jsonify(response), status
 
 

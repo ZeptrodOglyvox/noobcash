@@ -1,5 +1,6 @@
 import backend as node
 from backend.blockchain import Wallet, TransactionOutput, TransactionInput, Transaction, verify_signature
+from backend.utils import balance
 
 
 def test_wallet():
@@ -15,7 +16,7 @@ def test_wallet_balance():
         TransactionOutput('1', address, 12)
     ]
 
-    assert node.wallet.balance() == 27
+    assert balance() == 27
 
 
 def test_transaction_dictification(test_trans_ins_outs):
