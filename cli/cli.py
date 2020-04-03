@@ -4,61 +4,59 @@ import requests
 from flask import request
 import json
 # pip install click-shell
-# from click_shell import shell
-import backend as node
+from click_shell import shell
+# import backend as node
 
 # assume clients will run at ports 5000 and 5001 of PCs
 
 # bootstrap_node will be PC0:5000
 bootstrap_url = "http://10.0.0.1:5000"
 my_pkey = ""
-node_url_dict = {'id0': "http://10.0.0.1:5000"}
 n_clients = 5
 myurl = ""
 is_bootstrap = False
+myid = 0
 
 # Each node/client will have this list of transactions
 # new transactions to perform will be picked from this
 # list and then removed 
 transactions = []
 
-@click.group()
-# @shell(prompt='cli >>', intro='Starting up node...')
-@click.option('--bootstrap-node', '--boot', '--bn', \
+# @click.group() no more
+@shell(prompt='cli >> ', intro='Starting up node...')
+@click.option('--bn', default=False, \
     help='True if this is going to be the bootstrap node')
-@click.option('--n', help='Number of clients')
-@click.option('--host')
-@click.option('--port')
+@click.option('--n', default=5,help='Number of clients')
+@click.option('--host', default='127.0.0.1')
+@click.option('--port', default='5000')
 def cli(bn: bool = False, n: int = 5, \
     host: str = "127.0.0.1", port: str = "5000"):
-    is_bootstrap = bn
-    n_clients = n
+    is_bootstrap = bool(bn)
+    n_clients = int(n)
     myurl = host + ":" + port
+    click.echo(is_bootstrap)
+    click.echo(n_clients)
+    click.echo(myurl)
+ 
 
-@cli.command()
-def get_bootstrap():
-    click.echo("in get bootstrap\n")
-    click.echo("Bootstrap is {}".format(is_bootstrap))    
-
-@cli.command()
-@click.argument('file', type=click.File('r'))
-def read_transactions(ctx,file):
+@cli.command("read-tx")
+def read_transactions():
     """ Read the transactions to be perorfmed 
     from a txt file and store them in local list.
     """ 
-
-    myid = str(file).split('transactions')  
-    id = int(myid[1].split('.txt')[0])
+    filename = "transactions" + str(myid) + ".txt"
+    # myid = str(file).split('transactions')  
+    # id = int(myid[1].split('.txt')[0])
     # click.echo(myid)
     # click.echo(id)
-    myurl = node_url_dict[id]
-    click.echo(myurl)
-    for line in file:
-        node_id = int(line.split()[0][-1])
-        amount = int(line.split()[1])
-        transactions.append((node_id, amount))
+    with open(filename) as f:
+        for line in f:
+            node_id = int(line.split()[0][-1])
+            amount = int(line.split()[1])
+            transactions.append((node_id, amount))
     
     click.echo(transactions[:10])
+    
 
 @cli.command("boot-setup")
 def setup_bootstrap():
@@ -82,6 +80,10 @@ def setup_bootstrap():
 
 @cli.command("wallet")
 def generate_wallet():
+    """ 
+    Generate a wallet for this node. Call it before you
+    begin transacting.
+    """
     url = myurl + '/generate_wallet'
     response = requests.get(url=url)
     if response.status_code == 200:
@@ -131,6 +133,7 @@ def  new_transaction(recipient_address, amount):
 
 @cli.command("view")
 def view_last_block_transactions():
+    """ View last block's transactions. """
     url = myurl + '/blockchain/get_last_block'
     response = requests.get(url=url)
     if response.status_code == 200:
@@ -147,10 +150,12 @@ def view_last_block_transactions():
 
 @cli.command("balance")
 def show_balance():
-    pass
+    """ Show node's current balance in NBCs."""
+    balance = node.wallet.balance()
+    click.echo("Node{} remaining balance: {} NBCs\n.".format(myid, balance))
 
 def start():
-    cli(obj={})         
+    cli()         
 
 if __name__ == '__main__':
     start()
