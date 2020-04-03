@@ -133,12 +133,15 @@ def setup_node():
     return jsonify(response), status
 
 
-@bp.route('/setup_bootstrap', methods=['GET'])
+@bp.route('/setup_bootstrap', methods=['POST'])
+@required_fields('initial_amount')
 def setup_bootstrap():
+    data = request.get_json()
+
     node.node_id = 0
     node.wallet = Wallet()
-    init_tx = Transaction('0', node.wallet.public_key, 300)
-    init_out = TransactionOutput(init_tx.transaction_id, node.wallet.public_key, 300)
+    init_tx = Transaction('0', node.wallet.public_key, data['initial_amount'])
+    init_out = TransactionOutput(init_tx.transaction_id, node.wallet.public_key, data['initial_amount'])
     node.blockchain = Blockchain(
         create_genesis=True,
         initial_transaction=init_tx

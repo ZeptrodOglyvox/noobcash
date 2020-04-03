@@ -32,7 +32,7 @@ def get_info(nodes):
 
 @pytest.fixture()
 def bootstrap(nodes):
-    response = req.get(nodes[0] + '/setup_bootstrap')
+    response = req.post(nodes[0] + '/setup_bootstrap', json=dict(initial_amount=300))
     assert response.status_code == 200
 
 
