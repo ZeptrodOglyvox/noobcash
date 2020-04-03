@@ -1,7 +1,7 @@
 # Αναφορά project 
 (ονόματα, στοιχεία, κλπ)
 
-Δείτε το [project στο Github.](https://github.com/ZeptrodOglyvox/noobcash)
+Δείτε το [project στο Github.](https://github.com/ZeptrodOglyvox/noobcash_omadara)
 
 ## Στόχοι
 Ο στόχος του project είναι η ανάπτυξη εφαρμογής η οποία να εκτελεί σε κατανεμημένο δίκτυο ολιγάριθμων 
