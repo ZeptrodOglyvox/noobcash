@@ -93,25 +93,25 @@ modules.
 - bootstrap_endpoint(): Decorator για endpoints που απαιτούν πρόσβαση μόνο από τον bootstrap κόμβο κατά το setup.
 
 > _backend / blueprints / nodes.py_
-1. setup_bootstrap(): Ορίζει έναν κόμβο ως bootstrap και αρχικοποιεί γι αυτόν όλα τα αντικείμενα.
-2. generate_wallet(): Καλείται για να δημιουργήσει ζευγος RSA public/private keys για τον κόμβο και να θέσει το
+- setup_bootstrap(): Ορίζει έναν κόμβο ως bootstrap και αρχικοποιεί γι αυτόν όλα τα αντικείμενα.
+- generate_wallet(): Καλείται για να δημιουργήσει ζευγος RSA public/private keys για τον κόμβο και να θέσει το
 αντίστοιχο αντικείμενο. Τα επιστρέφει επίσης για πιθανή φύλαξη του private key από τον client (δεν γίνεται ποτέ ξανα
 διαθέσιμο).
-3. register_with_bootstrap(): Καλείται από όλους τους κόμβους δεδομένου του url που εξυπηρετεί ο bootstrap κόμβος, στον
+- register_with_bootstrap(): Καλείται από όλους τους κόμβους δεδομένου του url που εξυπηρετεί ο bootstrap κόμβος, στον
 οποίο παρέχουν τη διεύθυνσή και το public key τους.
-4. setup_network(): Μετά την ολοκληρωση των παραπάνω ο bootstrap κόμβος παρέχει σε όλους τους κόμβους ένα αντίγραφο
+- setup_network(): Μετά την ολοκληρωση των παραπάνω ο bootstrap κόμβος παρέχει σε όλους τους κόμβους ένα αντίγραφο
 του blockchain και του ευρετηρίου network.
-5. get_info(): Για κάθε κόμβο μπορούμε να λάβουμε μία σειρά πληροφοριών συμπεριλαμβανομένου του balance, του public key 
+- get_info(): Για κάθε κόμβο μπορούμε να λάβουμε μία σειρά πληροφοριών συμπεριλαμβανομένου του balance, του public key 
 και της εικόνας του για το δίκτυο.
 
 > _backend / blueprints / transactions.py_
 
-1. create_transaction(): Σύνταξη του επιθυμητού εγγράφου transaction εφ' όσον είναι εφικτό, παρέχοντας
+- create_transaction(): Σύνταξη του επιθυμητού εγγράφου transaction εφ' όσον είναι εφικτό, παρέχοντας
 αυτόματα τα απαραίτητα transaction inputs από τα utxos του αποστολέα και δημιουργώντας τα κατάλληλα outputs.
 (Σημ.: Είναι παραδοχή μας ότι utxos προερχόμενα από unconfirmed transactions δεν είναι διαθέσιμα, οπότε και δεν
 λαμβάνονται υπ' όψη στον υπολογισμό του balance.)
-2. sign_transaction(): Υπογραφή του εγγράφου με το private key του κόμβου.
-3. submit_transaction(): Validation και verification του δεδομένου transaction με την αντίστοιχη υπογραφή,
+- sign_transaction(): Υπογραφή του εγγράφου με το private key του κόμβου.
+- submit_transaction(): Validation και verification του δεδομένου transaction με την αντίστοιχη υπογραφή,
 όπως επίσης και ανακοίνωση του στο ίδιο endpoint του υπόλοιπου δικτύου για επιβεβαίωση (με χρήση του URL argument
 `?broadcast={0, 1}`). Eφ' όσον όλο το δίκτυο το επιβεβαιώσει, προστίθεται στο blockchain.
 
