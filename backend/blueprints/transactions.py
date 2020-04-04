@@ -25,7 +25,7 @@ def create_transaction():
         status_code = 400
     elif not (
         any(node_['public_key'] == data['sender_address'] for node_ in node.network) and
-        any(node_['public_key'] == data['sender_address'] for node_ in node.network) and
+        any(node_['public_key'] == data['recipient_address'] for node_ in node.network) and
         isinstance(data['amount'], (int, float))
     ):
         response = dict(message='Please make sure the proposed transaction is valid.')
@@ -76,6 +76,7 @@ def create_transaction():
 
 
 @bp.route('/sign', methods=['POST'])
+@required_fields('transaction')
 def sign_transaction():
     """
     Sign provided transaction document using host private key.
@@ -83,7 +84,7 @@ def sign_transaction():
     data = request.get_json()
 
     try:
-        tx = Transaction.from_dict(data)
+        tx = Transaction.from_dict(data['transaction'])
     except TypeError:
         response = dict(message='Improper transaction json provided.')
         status_code = 400
