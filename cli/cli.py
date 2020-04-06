@@ -1,7 +1,7 @@
 import click
 import sys
 import requests
-from flask import request
+from flask import request,jsonify
 import json
 # pip install click-shell
 from click_shell import shell
@@ -35,7 +35,7 @@ def cli(ctx, bn: bool = False, n: int = 5, \
     ctx.obj['is_bootstrap'] = bool(bn)
     ctx.obj['n_clients'] = int(n)
     ctx.obj['myurl'] = host + ":" + port
-    ctx.obj['bootstrap_url'] = "http://10.0.0.1:5000"
+    ctx.obj['bootstrap_url'] = "http://127.0.0.1:5000" #"http://10.0.0.1:5000"
     ctx.obj['transactions'] = []
     if ctx.obj['is_bootstrap']:
         ctx.obj['myid'] = 0    
@@ -60,7 +60,7 @@ def read_transactions(ctx):
     response = requests.get(url=url)
     # update it? not sure if it should be the loopback
     # or our intnet address
-    ctx.obj['myurl'] = response.content["address"]
+    ctx.obj['myurl'] = response.json()["address"]
     
     with open(filename) as f:
         for line in f:
@@ -87,10 +87,10 @@ def setup_bootstrap(ctx):
         if response.status_code == 200:
             info_url = ctx.obj['myurl']+'/get_info'
             info = requests.get(url=info_url)
-            # ctx.obj['myurl'] = info.content["address"]
-            ctx.obj['myid'] = info.content["node_id"] 
-            ctx.obj['my_pkey'] = info.content["public_key"]
-            click.echo(response.content["message"])
+            # ctx.obj['myurl'] = info.json()["address"]
+            ctx.obj['myid'] = info.json()["node_id"] 
+            ctx.obj['my_pkey'] = info.json()["public_key"]
+            click.echo(response.json()["message"])
 
 @cli.command("generate-wallet")
 @click.pass_context
@@ -102,7 +102,7 @@ def generate_wallet(ctx):
     url = ctx.obj["myurl"] + '/generate_wallet'
     response = requests.get(url=url)
     if response.status_code == 200:
-        ctx.obj['my_pkey'] = response.content["public_key"]
+        ctx.obj['my_pkey'] = response.json()["public_key"]
 
 @cli.command("register")
 @click.pass_context
@@ -114,12 +114,12 @@ def register_node(ctx):
     data = {
         'bootstrap_address': ctx.obj['bootstrap_url']
     }
-    response = requests.post(url=url, data=data)
+    response = requests.post(url=url, json=data)
     if response.status_code == 400:
-        click.echo("{}".format(response.content["message"]))
+        click.echo("{}".format(response.json()["message"]))
     else:
-        click.echo("{}".format(response.content["message"]))
-        ctx.obj['myid'] = response.content["node_id"]
+        click.echo("{}".format(response.json()["message"]))
+        ctx.obj['myid'] = response.json()["node_id"]
 
 
 
@@ -138,26 +138,30 @@ def setup_network(ctx):
         if len(network) == ctx.obj['n_clients']:
             url = ctx.obj['bootstrap_url'] + '/setup_network'
             response = requests.get(url=url)
-            click.echo("{}".format(response.content["message"]))
+            click.echo("{}".format(response.json()["message"]))
         else:
-            click.echo("Make sure all nodes are registered before calling net-setup.\n")
+            click.echo("Make sure all nodes are registered before calling net-setup.")
             click.echo("So far, {} nodes are registered, including bootstrap.".format(len(network)))
 
 
 @cli.command("t")
 @click.pass_context
-@click.argument('recipient_address') 
+@click.argument('recipient_id') 
 @click.argument('amount')
-def  new_transaction(ctx,recipient_address, amount):
-    """ Sends <recipient_address>'s wallet 
+def  new_transaction(ctx, recipient_id, amount):
+    """ Sends <recipient_id>'s wallet 
     <amount> NBCs.  """
+    # get_info to match id to ip address
+    info = requests.get(url=ctx.obj['myurl'] + '/get_info')
+    recipient_address = info.json()['network'][int(recipient_id)]['public_key']
+    
     url = ctx.obj['myurl'] + '/transactions'
     data = dict(
        sender_address=ctx.obj['my_pkey'],
        recipient_address=recipient_address,
-       amount=amount 
+       amount=int(amount) 
     )
-    response = requests.post(url=url+'/create',data=data)
+    response = requests.post(url=url+'/create',json=data)
     if response.status_code != 200:
         # error
         click.echo("{}".format(response.json()['message']))
@@ -165,16 +169,44 @@ def  new_transaction(ctx,recipient_address, amount):
         # or content or text or whatever?
         new_tx_dict = response.json() 
         sign_url = url + '/sign'
-        resp = requests.post(url=sign_url, data=new_tx_dict)
+        resp = requests.post(url=sign_url, json=new_tx_dict)
         if resp.status_code != 200:
-            click.echo("{}".format(resp.json['message']))
+            click.echo("{}".format(resp.json()['message']))
         else:
             sgn =resp.json()['signature']
             submit_url = url + '/submit?broadcast=1'
-            res = requests.post(url=submit_url, data={
+            res = requests.post(url=submit_url, json={
                 'transaction': new_tx_dict,
                 'signature' : sgn
             })
+            # 400 : Improper transaction JSON given
+            #       Transaction validation failed
+            #       Invalid signature 
+            # 202 : Rejected by network
+            # 200 : Transaction added to this BCs uncocnfirmed list
+            click.echo("{}".format(res.json()['message']))
+
+    # Now check if there are blocks to be mined.
+    # If yes, mine them and broadcast them etc.
+    url = ctx.obj['myurl'] + '/blockchain/get_capacity_reached'    
+    response = requests.get(url=url)
+    reached = response.json()['reached']
+    click.echo("reached: {}".format(reached))
+    # if it is false then no mining can take place, just
+    # finish with this transaction and get over it
+    if reached is True:
+        # I would love for the following lines of code 
+        # to work, but that is not the case yet.
+        myurl = ctx.obj['myurl']
+        url = myurl + '/blockchain/mine_block/'
+        mine_resp = requests.get(url=url)
+        if mine_resp.status_code == 200:
+            block_dict = mine_resp.json()
+            add_resp = requests.post(url=myurl + '/blockchain/add_block?\
+            broadcast=1', json=block_dict)
+            click.echo("{}".format(add_resp.json()['message']))
+    
+
 
 @cli.command("view")
 @click.pass_context
@@ -185,12 +217,12 @@ def view_last_block_transactions(ctx):
     if response.status_code == 200:
         transactions_dict = response.json()['transactions']
         for entry in transactions_dict:
-            click.echo('-- -- -- Transaction Begin -- -- --\n')
-            click.echo("Tid: {}\n".format(entry['transaction_id']))
-            click.echo("Sender: {}\n".format(entry['sender_address']))
-            click.echo("Recipient: {}\n".format(entry["recipient_address"]))
-            click.echo("Amount: {} NBCs\n".format(entry["amount"]))
-            click.echo("-- -- -- -- --\n")
+            click.echo('-- -- -- Transaction Begin -- -- --')
+            click.echo("Tid: {}".format(entry['transaction_id']))
+            click.echo("Sender: {}".format(entry['sender_address']))
+            click.echo("Recipient: {}".format(entry["recipient_address"]))
+            click.echo("Amount: {} NBCs".format(entry["amount"]))
+            click.echo("-- -- --  Transaction End  -- -- --\n")
     else:
         click.echo("Could not get last block transactions.\n")
 
@@ -202,24 +234,17 @@ def show_balance(ctx):
     response = requests.get(url=url)
     balance = response.json()['balance']
     myid = response.json()['node_id']
-    click.echo("Node{} remaining balance: {} NBCs\n.".format(myid, balance))
+    click.echo("Node{} remaining balance: {} NBCs.".format(myid, balance))
+
+# @cli.command("help")
+# @click.pass_context
+# def print_help(ctx):
+#     # ct = click.get_current_context()
+#     click.echo(ctx.get_help())
+#     ctx.exit()
 
 def start():
     cli(obj={})         
 
 if __name__ == '__main__':
     start()
-    # 1.
-    # update_peers()
-    # 2.
-    # make_bootstrap()
-    # get_bootstrap()
-    # read_transactions()  
-    # 3. begin transacting
-    # while transactions:
-    #     new_tx = transactions.pop(0)
-    #     recipient_address = node_url_dict[new_tx[0]]
-    #     amount = new_tx[1]
-    #     new_transaction(recipient_address, amount)
-
-
