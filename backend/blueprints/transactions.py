@@ -20,13 +20,13 @@ def create_transaction():
     status_code = None
 
     # Proposed transaction document validity checks
-    if balance() < data['amount']:
+    if balance() < (data['amount']):
         response = dict(message='Your balance is not enough to complete transaction')
         status_code = 400
     elif not (
         any(node_['public_key'] == data['sender_address'] for node_ in node.network) and
         any(node_['public_key'] == data['recipient_address'] for node_ in node.network) and
-        isinstance(data['amount'], (int, float))
+        isinstance((data['amount']), (int, float))
     ):
         response = dict(message='Please make sure the proposed transaction is valid.')
         status_code = 400
@@ -41,7 +41,7 @@ def create_transaction():
     sum_ = 0
     tx_inputs = []
     for utxo in node.blockchain.utxos[sender_address]:
-        if sum_ >= data['amount']:
+        if sum_ >= (data['amount']):
             break
         elif not node.blockchain.transaction_unconfirmed(utxo):
             sum_ += utxo.amount
@@ -52,12 +52,12 @@ def create_transaction():
         TransactionOutput(
             transaction_id=transaction_id,
             recipient_address=data['recipient_address'],
-            amount=data['amount']
+            amount=(data['amount'])
         ),
         TransactionOutput(
             transaction_id=transaction_id,
             recipient_address=data['sender_address'],
-            amount=sum_ - data['amount']
+            amount=sum_ - (data['amount'])
         )
     ]
 
@@ -65,7 +65,7 @@ def create_transaction():
     tx = Transaction(
         sender_address=data['sender_address'],
         recipient_address=data['recipient_address'],
-        amount=data['amount'],
+        amount=(data['amount']),
         transaction_inputs=tx_inputs,
         transaction_outputs=tx_outputs,
         transaction_id=transaction_id
@@ -76,7 +76,7 @@ def create_transaction():
 
 
 @bp.route('/sign', methods=['POST'])
-@required_fields('transaction')
+#@required_fields('transaction')
 def sign_transaction():
     """
     Sign provided transaction document using host private key.
@@ -84,7 +84,7 @@ def sign_transaction():
     data = request.get_json()
 
     try:
-        tx = Transaction.from_dict(data['transaction'])
+        tx = Transaction.from_dict(data)
     except TypeError:
         response = dict(message='Improper transaction json provided.')
         status_code = 400
@@ -138,6 +138,7 @@ def submit_transaction():
         return jsonify(response), status_code
 
     # Verify signature
+    # defined in backend/utils
     sign_result = verify_signature(tx, data['signature'])
     if isinstance(sign_result, str):
         response = dict(message=sign_result)
@@ -146,6 +147,20 @@ def submit_transaction():
 
     # Add transaction to local blockchain
     node.blockchain.add_transaction(tx)
+    myurl = node.network[node.node_id]['ip']
+    url = myurl + '/blockchain/mine_block'
+    mine_resp = requests.get(url=url)
+    if mine_resp.status_code == 200:
+        block_dict = mine_resp.json()
+        add_resp = requests.post(url=myurl + '/blockchain/add_block?\
+        broadcast=1', json=block_dict)
+    # run consensus    
+    requests.get(url=myurl+'/blockchain/consensus')
+        
+
 
     response = dict(message='Transaction added.')
     return jsonify(response), 200
+
+
+        

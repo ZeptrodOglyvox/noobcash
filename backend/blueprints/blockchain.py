@@ -36,7 +36,7 @@ def add_block():
     #####################################################
     # Extra explanation on how this is supposed to work:
     #####################################################
-    # We presume that if 1 proposed block manages to be accepted by all network in the network before any other has been
+    # We presume that if 1 proposed block manages to be accepted by all nodes in the network before any other has been
     # proposed, it has been accepted by the blockchain and its miner gets the dinner. Any later blocks should be
     # rejected.
     #
@@ -94,7 +94,7 @@ def add_block():
         )
         if not response.status_code == 200:
             response = dict(message='Block rejected by the network.')
-            return jsonify(response), 202
+            return jsonify(response), 201
 
         network_messages = response.json()['network_messages']
 
@@ -148,6 +148,12 @@ def broadcast_block():
 @bp.route('/get_last_block', methods=['GET'])
 def get_last_block():
     response = node.blockchain.last_block.to_dict()
+    return jsonify(response), 200
+
+
+@bp.route('/get_capacity', methods=['GET'])
+def get_capacity():
+    response = dict(capacity=len(node.blockchain.unconfirmed_transactions))
     return jsonify(response), 200
 
 

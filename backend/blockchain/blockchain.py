@@ -7,7 +7,7 @@ from .transaction import Transaction, TransactionOutput
 
 
 class Block:
-    capacity = 100
+    capacity = 5
 
     def __init__(self, index, previous_hash, timestamp=None, transactions=None, nonce=None, hash=None):
         self.index = index
@@ -64,7 +64,9 @@ class Blockchain:
 
     @property
     def last_block(self):
-        return self.chain[-1]
+        with self.lock:
+            ret = self.chain[-1]
+        return ret
 
     @staticmethod
     def mine_block(block, difficulty):
@@ -122,12 +124,15 @@ class Blockchain:
                 self.utxos[to.recipient_address].append(to)
 
     def transaction_unconfirmed(self, transaction):
-        unconfirmed_ids = [tx.transaction_id for tx in self.unconfirmed_transactions]
+        with self.lock:
+            unconfirmed_ids = [tx.transaction_id for tx in self.unconfirmed_transactions]
         return transaction.id in unconfirmed_ids
 
     def mine(self):
-        if not self.unconfirmed_transactions:
-            return None
+        with self.lock:
+            if not self.unconfirmed_transactions or \
+                len(self.unconfirmed_transactions) < Block.capacity:
+                return None
 
         last_block = self.last_block
         new_block = Block(
@@ -143,15 +148,16 @@ class Blockchain:
         return new_block
 
     def to_dict(self):
-        ret = dict(
-            length=len(self),
-            chain=[b.to_dict() for b in self.chain],
-            unconfirmed_transactions=[t.to_dict() for t in self.unconfirmed_transactions],
-            utxos={
-                address: [utxo.to_dict() for utxo in utxo_list]
-                for address, utxo_list in self.utxos.items()
-            }
-        )
+        with self.lock:
+            ret = dict(
+                length=len(self),
+                chain=[b.to_dict() for b in self.chain],
+                unconfirmed_transactions=[t.to_dict() for t in self.unconfirmed_transactions],
+                utxos={
+                    address: [utxo.to_dict() for utxo in utxo_list]
+                    for address, utxo_list in self.utxos.items()
+                }
+            )
         return ret
 
     @classmethod

@@ -17,7 +17,7 @@ def get_info():
 
     response = dict(
         node_id=id_,
-        address=request.host_url,
+        address=request.host_url[:-1],
         public_key=node.wallet.public_key if node.wallet else '',
         chain_length=len(node.blockchain) if node.blockchain else -1,
         balance=balance() if node.wallet and node.blockchain else -1,
@@ -40,9 +40,10 @@ def setup_bootstrap():
         initial_transaction=init_tx
     )
     node.blockchain.utxos[node.wallet.public_key] = [init_out]
+    # print(node.blockchain.utxos)
     node.network = [dict(
         id=node.node_id,
-        ip=request.host_url,
+        ip=request.host_url[:-1],
         public_key=node.wallet.public_key
     )]
 
@@ -77,7 +78,7 @@ def register_with_bootstrap():
     registration_response = requests.post(
         data['bootstrap_address'] + '/register_node',
         json=dict(
-            ip=request.host_url,
+            ip=request.host_url[:-1],
             wallet_public_key=node.wallet.public_key
         )
     )

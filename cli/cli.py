@@ -188,24 +188,16 @@ def  new_transaction(ctx, recipient_id, amount):
 
     # Now check if there are blocks to be mined.
     # If yes, mine them and broadcast them etc.
-    url = ctx.obj['myurl'] + '/blockchain/get_capacity_reached'    
+    url = ctx.obj['myurl'] + '/blockchain/get_capacity'    
     response = requests.get(url=url)
-    reached = response.json()['reached']
-    click.echo("reached: {}".format(reached))
-    # if it is false then no mining can take place, just
-    # finish with this transaction and get over it
-    if reached is True:
-        # I would love for the following lines of code 
-        # to work, but that is not the case yet.
-        myurl = ctx.obj['myurl']
-        url = myurl + '/blockchain/mine_block/'
-        mine_resp = requests.get(url=url)
-        if mine_resp.status_code == 200:
-            block_dict = mine_resp.json()
-            add_resp = requests.post(url=myurl + '/blockchain/add_block?\
-            broadcast=1', json=block_dict)
-            click.echo("{}".format(add_resp.json()['message']))
-    
+    capacity = response.json()['capacity']
+    click.echo("unconfirmed: {}".format(capacity))
+
+@cli.command("do-all-t")
+@click.pass_context
+def do_all_transactions(ctx):    
+    for transaction in ctx.obj['transactions']:
+        ctx.invoke(new_transaction, recipient_id=transaction[0], amount=transaction[1])
 
 
 @cli.command("view")
@@ -236,6 +228,15 @@ def show_balance(ctx):
     myid = response.json()['node_id']
     click.echo("Node{} remaining balance: {} NBCs.".format(myid, balance))
 
+@cli.command("info")
+@click.pass_context
+def show_info(ctx):
+    url = ctx.obj['myurl'] + '/get_info'
+    response = requests.get(url=url)
+    network = response.json()['network']
+    for entry in network:
+        click.echo("--------")
+        click.echo("{}\n".format(entry))
 # @cli.command("help")
 # @click.pass_context
 # def print_help(ctx):
