@@ -40,10 +40,10 @@ def create_transaction():
     sender_address = data['sender_address']
     sum_ = 0
     tx_inputs = []
-    for utxo in node.blockchain.utxos[sender_address]:
+    for utxo in node.blkchain.utxos[sender_address]:
         if sum_ >= (data['amount']):
             break
-        elif not node.blockchain.transaction_unconfirmed(utxo):
+        elif not node.blkchain.transaction_unconfirmed(utxo):
             sum_ += utxo.amount
             tx_inputs.append(TransactionInput.from_output(utxo))
 
@@ -76,7 +76,7 @@ def create_transaction():
 
 
 @bp.route('/sign', methods=['POST'])
-#@required_fields('transaction')
+# @required_fields('transaction')
 def sign_transaction():
     """
     Sign provided transaction document using host private key.
@@ -146,7 +146,7 @@ def submit_transaction():
         return jsonify(response), status_code
 
     # Add transaction to local blockchain
-    node.blockchain.add_transaction(tx)
+    node.blkchain.add_transaction(tx)
     myurl = node.network[node.node_id]['ip']
     url = myurl + '/blockchain/mine_block'
     mine_resp = requests.get(url=url)
@@ -156,11 +156,7 @@ def submit_transaction():
         broadcast=1', json=block_dict)
     # run consensus    
     requests.get(url=myurl+'/blockchain/consensus')
-        
-
 
     response = dict(message='Transaction added.')
+
     return jsonify(response), 200
-
-
-        

@@ -13,7 +13,7 @@ def test_get_info(test_client, node_setup):
     expected = dict(
         node_id=node.node_id,
         public_key=node.wallet.public_key,
-        chain_length=len(node.blockchain),
+        chain_length=len(node.blkchain),
         balance=balance(),
         network=node.network
     )

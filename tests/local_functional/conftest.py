@@ -27,15 +27,15 @@ def test_client():
 def node_setup():
     node.wallet = Wallet()
     node.node_id = 0
-    node.blockchain = Blockchain()
-    node.blockchain.utxos = {}
+    node.blkchain = Blockchain()
+    node.blkchain.utxos = {}
 
     address = node.wallet.address
-    node.blockchain.utxos[address] = [
+    node.blkchain.utxos[address] = [
         TransactionOutput('0', address, 10),
         TransactionOutput('1', address, 10)
     ]
-    node.blockchain.utxos['0'] = []
+    node.blkchain.utxos['0'] = []
 
     node.network = [
         dict(public_key=node.wallet.public_key),

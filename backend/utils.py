@@ -44,7 +44,7 @@ def bootstrap_endpoint(view):
 def validate_transaction_document(transaction):
     tx_inputs = transaction.transaction_inputs
     tx_ouputs = transaction.transaction_outputs
-    utxos = node.blockchain.utxos[transaction.sender_address]
+    utxos = node.blkchain.utxos[transaction.sender_address]
     utxo_ids = [u.id for u in utxos]
 
     checks = dict(
@@ -67,9 +67,9 @@ def validate_transaction_document(transaction):
 
 
 def get_longest_blockchain():
-    cur_length = len(node.blockchain)
-    cur_last_hash = node.blockchain.last_block.hash
-    ret = node.blockchain
+    cur_length = len(node.blkchain)
+    cur_last_hash = node.blkchain.last_block.hash
+    ret = node.blkchain
     for node_ in node.network:
         if not node_['id'] == node.node_id:
             response = requests.get(node_['ip'] + '/blockchain/get_chain')
@@ -92,5 +92,5 @@ def balance():
     :return: The sum of all UTXOs with this node as the recipient that aren't referencing unconfirmed transactions.
     """
     public_key = node.wallet.public_key
-    utxos = node.blockchain.utxos[public_key]
-    return sum(utxo.amount for utxo in utxos if not node.blockchain.transaction_unconfirmed(utxo))
+    utxos = node.blkchain.utxos[public_key]
+    return sum(utxo.amount for utxo in utxos if not node.blkchain.transaction_unconfirmed(utxo))

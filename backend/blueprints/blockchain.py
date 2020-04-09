@@ -9,13 +9,13 @@ bp = Blueprint('blockchain', __name__, url_prefix='/blockchain')
 
 @bp.route('/get_chain', methods=['GET'])
 def get_chain():
-    response = node.blockchain.to_dict()
+    response = node.blkchain.to_dict()
     return jsonify(response), 200
 
 
 @bp.route('/mine_block', methods=['GET'])
 def mine_block():
-    mined_block = node.blockchain.mine()
+    mined_block = node.blkchain.mine()
 
     if mined_block is None:
         response = dict(message='No unconfirmed transactions to mine.')
@@ -69,17 +69,17 @@ def add_block():
     attempt_result = None
     block_accepted = False
 
-    result = node.blockchain.add_block(block)
+    result = node.blkchain.add_block(block)
     if not isinstance(result, str):
         attempt_result = f'{node.node_id} accepted immediately.'
         block_accepted = True
     else:
-        node.blockchain.replace(get_longest_blockchain())
-        if block in node.blockchain:
+        node.blkchain.replace(get_longest_blockchain())
+        if block in node.blkchain:
             attempt_result = f'{node.node_id} had to get consensus.'
             block_accepted = True
         else:
-            result = node.blockchain.add_block(block)
+            result = node.blkchain.add_block(block)
             if not isinstance(result, str):
                 block_accepted = True
             else:
@@ -104,7 +104,6 @@ def add_block():
             network_messages=network_messages,
             attempt_result=attempt_result
         )
-
         status = 200
     else:
         response = dict(
@@ -147,17 +146,17 @@ def broadcast_block():
 
 @bp.route('/get_last_block', methods=['GET'])
 def get_last_block():
-    response = node.blockchain.last_block.to_dict()
+    response = node.blkchain.last_block.to_dict()
     return jsonify(response), 200
 
 
 @bp.route('/get_capacity', methods=['GET'])
 def get_capacity():
-    response = dict(capacity=len(node.blockchain.unconfirmed_transactions))
+    response = dict(capacity=len(node.blkchain.unconfirmed_transactions))
     return jsonify(response), 200
 
 
 @bp.route('/consensus', methods=['GET'])
 def consensus():
-    node.blockchain.replace(get_longest_blockchain())
+    node.blkchain.replace(get_longest_blockchain())
     return jsonify({}), 200

@@ -4,7 +4,7 @@ A module representing the node instance backend. API endpoint implementations in
 
 from flask import Flask
 
-blockchain = None
+blkchain = None
 wallet = None  # Initialized by GET to /generate_wallet endpoint
 network = []  # Updated with dicts of the form {node_id: ..., url: ..., public_key: ...}
 node_id = None

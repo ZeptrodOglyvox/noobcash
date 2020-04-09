@@ -12,11 +12,11 @@ def assert_json_200(response):
 
 
 def test_mine_block(test_client, node_setup, test_block, test_transaction):
-    result = node.blockchain.add_block(test_block)
+    result = node.blkchain.add_block(test_block)
     assert not isinstance(result, str)
-    assert test_block == node.blockchain.last_block
+    assert test_block == node.blkchain.last_block
     assert test_transaction in test_block.transactions
-    assert test_transaction in node.blockchain.last_block.transactions
+    assert test_transaction in node.blkchain.last_block.transactions
 
 
 def test_get_chain(test_client, node_setup, test_block):
@@ -25,7 +25,7 @@ def test_get_chain(test_client, node_setup, test_block):
     data = response.get_json()
     bc = Blockchain.from_dict(data)
 
-    assert len(node.blockchain) == data['length']
-    assert bc == node.blockchain
+    assert len(node.blkchain) == data['length']
+    assert bc == node.blkchain
 
 

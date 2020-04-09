@@ -92,6 +92,6 @@ def test_submit_transaction(test_client, node_setup, test_transaction):
     assert_json_200(response)
     data = response.get_json()
     assert data['message'] == 'Transaction added.'
-    assert test_transaction in node.blockchain.unconfirmed_transactions
-    assert test_transaction.transaction_outputs[0] in node.blockchain.utxos[test_transaction.recipient_address]
-    assert test_transaction.transaction_outputs[1] in node.blockchain.utxos[test_transaction.sender_address]
+    assert test_transaction in node.blkchain.unconfirmed_transactions
+    assert test_transaction.transaction_outputs[0] in node.blkchain.utxos[test_transaction.recipient_address]
+    assert test_transaction.transaction_outputs[1] in node.blkchain.utxos[test_transaction.sender_address]

@@ -19,8 +19,8 @@ def get_info():
         node_id=id_,
         address=request.host_url[:-1],
         public_key=node.wallet.public_key if node.wallet else '',
-        chain_length=len(node.blockchain) if node.blockchain else -1,
-        balance=balance() if node.wallet and node.blockchain else -1,
+        chain_length=len(node.blkchain) if node.blkchain else -1,
+        balance=balance() if node.wallet and node.blkchain else -1,
         network=node.network
     )
     return jsonify(response), 200
@@ -35,12 +35,12 @@ def setup_bootstrap():
     node.wallet = Wallet()
     init_tx = Transaction('0', node.wallet.public_key, data['initial_amount'])
     init_out = TransactionOutput(init_tx.transaction_id, node.wallet.public_key, data['initial_amount'])
-    node.blockchain = Blockchain(
+    node.blkchain = Blockchain(
         create_genesis=True,
         initial_transaction=init_tx
     )
-    node.blockchain.utxos[node.wallet.public_key] = [init_out]
-    # print(node.blockchain.utxos)
+    node.blkchain.utxos[node.wallet.public_key] = [init_out]
+    # print(node.blkchain.utxos)
     node.network = [dict(
         id=node.node_id,
         ip=request.host_url[:-1],
@@ -113,7 +113,7 @@ def register_node():
         ip=data['ip'],
         public_key=data['wallet_public_key']
     ))
-    node.blockchain.utxos[data['wallet_public_key']] = []
+    node.blkchain.utxos[data['wallet_public_key']] = []
 
     response, status = dict(node_id=new_id), 200
     return jsonify(response), status
@@ -129,7 +129,7 @@ def setup_network():
                 node_['ip'] + '/setup_node',
                 json=dict(
                     network=node.network,
-                    blockchain=node.blockchain.to_dict()
+                    blockchain=node.blkchain.to_dict()
                 )
             )
             statuses[node_['ip']] = resp.status_code
@@ -147,7 +147,7 @@ def setup_network():
 def setup_node():
     data = request.get_json()
     try:
-        node.blockchain = Blockchain.from_dict(data['blockchain'])
+        node.blkchain = Blockchain.from_dict(data['blockchain'])
     except (KeyError, TypeError):
         response, status = dict('Invalid blockchain JSON provided.'), 400
         return jsonify(response), status
@@ -162,7 +162,7 @@ def setup_node():
 def clear():
     node.wallet = None
     node.node_id = None
-    node.blockchain = None
+    node.blkchain = None
     node.network = []
 
     return jsonify(dict(message='Node cleared.')), 200

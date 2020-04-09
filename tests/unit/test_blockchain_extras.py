@@ -11,7 +11,7 @@ def test_wallet():
 def test_wallet_balance():
     node.wallet = Wallet()
     address = node.wallet.address
-    node.blockchain.utxos[address] = [
+    node.blkchain.utxos[address] = [
         TransactionOutput('0', address, 15),
         TransactionOutput('1', address, 12)
     ]

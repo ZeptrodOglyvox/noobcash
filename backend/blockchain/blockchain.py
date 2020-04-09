@@ -126,12 +126,12 @@ class Blockchain:
     def transaction_unconfirmed(self, transaction):
         with self.lock:
             unconfirmed_ids = [tx.transaction_id for tx in self.unconfirmed_transactions]
-        return transaction.id in unconfirmed_ids
+        return transaction.transaction_id in unconfirmed_ids
 
     def mine(self):
         with self.lock:
             if not self.unconfirmed_transactions or \
-                len(self.unconfirmed_transactions) < Block.capacity:
+                    len(self.unconfirmed_transactions) < Block.capacity:
                 return None
 
         last_block = self.last_block
