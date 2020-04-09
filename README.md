@@ -12,3 +12,19 @@ and then running
  `flask run --host 127.0.0.1 --port <port>`
  
  on multiple terminals.
+ 
+To use the CLI:
+1. python3.7 cli.py --n <number of clients> (default:5)  --port <port> (default:5000) --bn [<master?True:False (default:False)]
+2. * If this node is the bootstrap(master node) :
+     ```>> boot-setup```
+   * If this is just a client node :
+     ~~~~
+     >> generate-wallet
+     >> register 
+     ~~~~     
+3. On master node:
+    ``` >> net-setup```
+4. On all nodes:
+    ``` >> read-tx```
+5. On all nodes:
+    ```>> do-all-t```
