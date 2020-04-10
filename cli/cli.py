@@ -5,22 +5,19 @@ from flask import request,jsonify
 import json
 # pip install click-shell
 from click_shell import shell
+import time
 
-# TODO: replace all response.content with response.json()
-# assume clients will run at ports 5000 and 5001 of PCs
-# TODO: match public keys to ids in create_transaction ("t")
+def start_timer():
+    global start_time
+    start_time = time.perf_counter()
+    print("Timer started!")
+    print(start_time)
 
-# bootstrap_node will be PC0:5000
-# bootstrap_url = "http://10.0.0.1:5000"
-# my_pkey = ""
-# n_clients = 5
-# myurl = "http://127.0.0.1"
-# is_bootstrap = False
-# myid = 0
-
-# Each node/client will have this list of transactions
-# new transactions to perform will be picked from this
-# list and then removed 
+def stop_timer():
+    stop_time = time.perf_counter()
+    print("Stop timer!")
+    print(start_time)
+    print(stop_time)
 
 # @click.group() no more
 @shell(prompt='cli >> ', intro='Starting up node...')
@@ -32,11 +29,12 @@ from click_shell import shell
 @click.option('--port', default='5000')
 def cli(ctx, bn: bool = False, n: int = 5, \
     host: str = "http://127.0.0.1", port: str = "5000"):
-    ctx.obj['is_bootstrap'] = bool(bn)
+    ctx.obj['is_bootstrap'] = True if bn == "1" else False
     ctx.obj['n_clients'] = int(n)
     ctx.obj['myurl'] = host + ":" + port
-    ctx.obj['bootstrap_url'] = "http://127.0.0.1:5000" #"http://10.0.0.1:5000"
+    ctx.obj['bootstrap_url'] = "http://10.0.0.1:5000"
     ctx.obj['transactions'] = []
+    ctx.obj['successful_transactions']=0
     if ctx.obj['is_bootstrap']:
         ctx.obj['myid'] = 0    
     else:
@@ -185,6 +183,7 @@ def  new_transaction(ctx, recipient_id, amount):
             # 202 : Rejected by network
             # 200 : Transaction added to this BCs uncocnfirmed list
             click.echo("{}".format(res.json()['message']))
+            ctx.obj['successful_transactions'] = ctx.obj['successful_transactions'] + 1 if res.status_code == 200 else ctx.obj['successful_transactions']
 
     # Now check if there are blocks to be mined.
     # If yes, mine them and broadcast them etc.
@@ -195,9 +194,12 @@ def  new_transaction(ctx, recipient_id, amount):
 
 @cli.command("do-all-t")
 @click.pass_context
-def do_all_transactions(ctx):    
+def do_all_transactions(ctx):
+    start_timer()
     for transaction in ctx.obj['transactions']:
         ctx.invoke(new_transaction, recipient_id=transaction[0], amount=transaction[1])
+    stop_timer()    
+    click.echo("Total successful transactions : {}".format(ctx.obj['successful_transactions']))    
 
 
 @cli.command("view")
