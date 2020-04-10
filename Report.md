@@ -1,5 +1,8 @@
 # Αναφορά project 
-(ονόματα, στοιχεία, κλπ)
+| Όνομα | ΑΜ |
+| ---- | ---- |
+| Νίκος Τσάκας | 03115433 |
+| Απόστολος Κόλκας | 03115142 |
 
 Δείτε το [project στο Github.](https://github.com/ZeptrodOglyvox/noobcash_omadara)
 
@@ -123,3 +126,17 @@ modules.
 - consensus(): Καλεί την συνάρτηση get_longest_blockchain() από το module backend.utils, η οποία εντοπίζει την
 μακρύτερη αλυσίδα στο δίκτυο (με επιπλέον tie-breaker condition τη λεξικογραφική διάταξη του hash του τελευταίου 
 block).
+
+### CLI
+
+Συναρτήσεις του CLI:
+- **balance**: Τυπώνει το current balance του client.
+- **boot-setup**: Καλείται από το master κόμβο και καλεί τη setup_bootstrap() στο backend η οποία αναλαμβάνει να δημιουργήσει το πρώτο (genesis) block της αλυσίδας και να δημιουργήσει wallet για τον κόμβο bootstrap (master). 
+- **do-all-t**: Καλεί την t <id> <amount> για κάθε transaction που διαβάστηκε από το αντίστοιχο αρχείο transactions.txt
+- **generate-wallet**: Δημιουργεί ένα wallet (ζεύγος private-public key) για τον κόμβο που το καλεί.
+- **info**: Τυπώνει τις πληροφορίες του δικτύου (node_id - node_ip - node_public_key) για κάθε κόμβο του δικτύου.
+- **net-setup**: Αφού όλοι οι κόμβοι εισέλθουν στο δίκτυο, καλείται από το bootstrap node για να σταλούν σε κάθε κόμβο οι πληροφορίες του δικτύου και το αντίγραφο του blockchain.
+-  **read-tx**: Διαβάζει τα αντίστοιχα transactions απο το κατάλληλο αρχείο και τα αποθηκεύει σε μια λίστα.
+- **register**: Καλείται από έναν κόμβο - slave προκειμένου να ενημερωθεί ο bootstrap για την είσοδό του στο δίκτυο.
+- **t recipient_id  amount** : Δημιουργεί ένα νέο transaction που επιχειρεί να στείλει amount NBCs στον κόμβο με id recipient_id.
+- **view**: Τυπώνει τα transactions του τελευταίου block. 
