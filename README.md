@@ -14,7 +14,7 @@ and then running
  on multiple terminals.
  
 To use the CLI:
-1. python3.7 cli.py --n <number of clients> --port <port> --bn (master?True:False)
+1. python3.7 cli.py --n <number of clients> --port <port> --bn (master?1:0)
 2. * If this node is the bootstrap(master node) :
      ```>> boot-setup```
    * If this is just a client node :
