@@ -1,3 +1,6 @@
+A simple blockchain /cryptocurrency distributed application for our Distributed Systems class.
+
+
 To install all requirements run
 
 `python -m pip install -r requirements.txt`
